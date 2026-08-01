@@ -1,0 +1,40 @@
+# ==========================================================
+# MDVSocial 1.5.1 - Añadir a una config 1.5.0 existente
+# ==========================================================
+
+messages:
+  # Solo se usa si activas mail.welcome.notify-in-chat.
+  mail-received: '&eHas recibido una carta de &f{sender}&e.'
+
+mail:
+  welcome:
+    # La carta llega al buzón, pero no muestra nada en el chat.
+    notify-in-chat: false
+
+interactive-chat:
+  profile:
+    # Grupo DIRECTO con mayor peso configurado en LuckPerms.
+    highest-weight-group-placeholders:
+      - '%luckperms_highest_group_by_weight%'
+
+    # Nombres visuales opcionales. Usa aquí los IDs reales de tus grupos.
+    group-display-names:
+      admin: '&c&lAdministrador'
+      moderador: '&5&lModerador'
+      pomberito: '&2&lPombero'
+      helper: '&b&lHelper'
+      tester: '&eTester'
+
+    # Compatibilidad: solo se usan si el placeholder de mayor peso falla.
+    primary-group-placeholders:
+      - '%luckperms_primary_group_name%'
+      - '%luckperms_primary_group%'
+
+    rank-priority-fallback:
+      - heroe
+      - noble
+      - campeon
+      - caballero
+      - creador
+      - embajador
+      - aventurero

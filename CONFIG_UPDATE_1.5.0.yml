@@ -1,0 +1,62 @@
+# ==========================================================
+# MDVSocial 1.5.0 - Cambios para una config.yml existente
+# ==========================================================
+
+messages:
+  friend-mmocore-missing: '&cMMOCore no está disponible para enviar solicitudes de amistad.'
+  friend-target-offline: '&cNo puedes enviar una solicitud de amistad a &e{target}&c porque no está conectado.'
+  friend-self: '&cNo puedes enviarte una solicitud de amistad a ti mismo.'
+  friend-already: '&e{target} &aya forma parte de tu lista de amigos.'
+  friend-request-sent: '&aSolicitud de amistad enviada a &e{target}&a.'
+  friend-error: '&cNo se pudo enviar la solicitud de amistad.'
+  private-message-suggest: '&bHaz clic aquí para escribirle a &e{target}&b.'
+
+interactive-chat:
+  enabled: true
+  options-menu: jugador_opciones
+  profile-cache-refresh-ticks: 100
+
+  profile:
+    level-placeholder: '%mmocore_level%'
+    race-placeholders:
+      - '%mmocore_race%'
+      - '%mmocore_class%'
+    clan-placeholder: '%mdvclans_clan_line%'
+    primary-group-placeholders:
+      - '%luckperms_primary_group_name%'
+      - '%luckperms_primary_group%'
+    rank-priority:
+      - heroe
+      - noble
+      - campeon
+      - caballero
+      - creador
+      - embajador
+      - aventurero
+    no-title-text: '&7Sin título'
+    no-rank-text: '&7Sin rango'
+    no-clan-text: '&8Sin clan'
+
+  hover:
+    - '&6&l{player}'
+    - ''
+    - '&e&l● &7&lInformación'
+    - '&7Nivel: &e{level}'
+    - '&7Raza: &f{race}'
+    - '&7Rango: &r{rank}'
+    - '&7Título: &r{title}'
+    - '&7Clan: &r{clan}'
+    - ''
+    - '&aClic para mirar opciones'
+    - '&bShift + clic para escribirle'
+
+# Añade hidden: true dentro de cada uno de estos tres títulos:
+titles:
+  pomberito_staff:
+    hidden: true
+
+  helper_staff:
+    hidden: true
+
+  dios_personal:
+    hidden: true

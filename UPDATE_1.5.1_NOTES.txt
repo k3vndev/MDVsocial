@@ -1,0 +1,20 @@
+MDVSocial 1.5.1
+=================
+
+CORRECCIÓN DE BIENVENIDA
+- La carta automática continúa llegando al buzón del jugador nuevo.
+- Por defecto no envía ningún mensaje al chat.
+- Evita el aviso "Mensaje faltante: mail-received" en configuraciones antiguas.
+- Nueva opción: mail.welcome.notify-in-chat (false por defecto).
+
+RANGO DE LUCKPERMS
+- El hover y Menus/jugador_opciones.yml muestran el grupo directo con mayor peso.
+- Fuente oficial: %luckperms_highest_group_by_weight%.
+- El resultado se puede colorear o renombrar con interactive-chat.profile.group-display-names.
+- Si el grupo coincide con un ID de la sección ranks, reutiliza ese display.
+- Mantiene fallbacks de primary group y permisos por compatibilidad.
+
+MIGRACIÓN
+- No cambia player-data.yml ni mail-data.yml.
+- No hace falta borrar config.yml ni la carpeta Menus.
+- Usa CONFIG_UPDATE_FROM_1.4.0_TO_1.5.1.yml si vienes de 1.4.x.

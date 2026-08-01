@@ -1,0 +1,78 @@
+# ==========================================================
+# MDVSocial 1.4.x -> 1.5.1
+# COPIA estas secciones dentro de tu config.yml actual.
+# No borres tus títulos, rangos, hogares, correo ni menús.
+# ==========================================================
+
+messages:
+  friend-mmocore-missing: '&cMMOCore no está disponible para enviar solicitudes de amistad.'
+  friend-target-offline: '&cNo puedes enviar una solicitud de amistad a &e{target}&c porque no está conectado.'
+  friend-self: '&cNo puedes enviarte una solicitud de amistad a ti mismo.'
+  friend-already: '&e{target} &aya forma parte de tu lista de amigos.'
+  friend-request-sent: '&aSolicitud de amistad enviada a &e{target}&a.'
+  friend-error: '&cNo se pudo enviar la solicitud de amistad.'
+  private-message-suggest: '&bHaz clic aquí para escribirle a &e{target}&b.'
+  mail-received: '&eHas recibido una carta de &f{sender}&e.'
+
+interactive-chat:
+  enabled: true
+  options-menu: jugador_opciones
+  profile-cache-refresh-ticks: 100
+
+  profile:
+    level-placeholder: '%mmocore_level%'
+    race-placeholders:
+      - '%mmocore_race%'
+      - '%mmocore_class%'
+    clan-placeholder: '%mdvclans_clan_line%'
+
+    # Grupo directo de LuckPerms con mayor peso.
+    highest-weight-group-placeholders:
+      - '%luckperms_highest_group_by_weight%'
+
+    primary-group-placeholders:
+      - '%luckperms_primary_group_name%'
+      - '%luckperms_primary_group%'
+
+    group-display-names:
+      admin: '&c&lAdministrador'
+      moderador: '&5&lModerador'
+      pomberito: '&2&lPombero'
+      helper: '&b&lHelper'
+      tester: '&eTester'
+
+    rank-priority-fallback:
+      - heroe
+      - noble
+      - campeon
+      - caballero
+      - creador
+      - embajador
+      - aventurero
+
+    no-title-text: '&7Sin título'
+    no-rank-text: '&7Sin rango'
+    no-clan-text: '&8Sin clan'
+
+  hover:
+    - '&6&l{player}'
+    - ''
+    - '&e&l● &7&lInformación'
+    - '&7Nivel: &e{level}'
+    - '&7Raza: &f{race}'
+    - '&7Rango: &r{rank}'
+    - '&7Título: &r{title}'
+    - '&7Clan: &r{clan}'
+    - ''
+    - '&aClic para mirar opciones'
+    - '&bShift + clic para escribirle'
+
+mail:
+  welcome:
+    # Conserva tus demás valores actuales de welcome.
+    notify-in-chat: false
+
+# Dentro de cada uno de estos títulos añade hidden: true:
+# titles.pomberito_staff.hidden: true
+# titles.helper_staff.hidden: true
+# titles.dios_personal.hidden: true

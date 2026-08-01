@@ -1,5 +1,5 @@
 # ==========================================================
-# MDVSocial 1.5.1
+# MDVSocial 1.5.0
 # Menu social + sistema de titulos cosmeticos para MDVCRAFT
 # ==========================================================
 
@@ -29,7 +29,6 @@ messages:
   mail-unblock-prompt: '&eEscribe el nombre del jugador que quieres desbloquear. Escribe &ccancelar &epara salir.'
   mail-cancelled: '&7Accion de carta cancelada.'
   mail-sent: '&aCarta enviada a &e{target}&a.'
-  mail-received: '&eHas recibido una carta de &f{sender}&e.'
   mail-player-not-found: '&cJugador no encontrado. Intenta de nuevo o cancela escribiendo &4cancelar. &cDebe haber entrado al servidor al menos una vez.'
   mail-self: '&cNo puedes enviarte una carta a ti mismo.'
   mail-self-block: '&cNo puedes bloquearte a ti mismo.'
@@ -461,27 +460,10 @@ interactive-chat:
       - '%mmocore_race%'
       - '%mmocore_class%'
     clan-placeholder: '%mdvclans_clan_line%'
-
-    # Grupo DIRECTO con mayor peso de LuckPerms.
-    highest-weight-group-placeholders:
-      - '%luckperms_highest_group_by_weight%'
-
-    # Solo se usan si el placeholder de mayor peso no está disponible.
     primary-group-placeholders:
       - '%luckperms_primary_group_name%'
       - '%luckperms_primary_group%'
-
-    # Nombres/colores opcionales para grupos que no están definidos en ranks:.
-    # Las claves deben coincidir con el ID real del grupo de LuckPerms.
-    group-display-names:
-      admin: '&c&lAdministrador'
-      moderador: '&5&lModerador'
-      pomberito: '&2&lPombero'
-      helper: '&b&lHelper'
-      tester: '&eTester'
-
-    # Último fallback si PlaceholderAPI/LuckPerms no responde.
-    rank-priority-fallback:
+    rank-priority:
       - heroe
       - noble
       - campeon
@@ -568,9 +550,6 @@ mail:
     message: '¡Bienvenido a MDVCRAFT! Revisa el libro del viajero para conocer tus hogares, títulos, correo, amigos y demás sistemas.'
     expire-days: 3
     ignore-mailbox-limit: true
-
-    # false: la bienvenida llega solo al buzón, sin avisos en el chat.
-    notify-in-chat: false
   never-expires-text: 'no expira'
   # Permisos para expandir buzón.
   mailbox-size-permissions:

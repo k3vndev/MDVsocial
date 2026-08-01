@@ -1,8 +1,27 @@
-# MDVSocial 1.4.1
-
-Actualización 1.2.11: añade el item fijo del menú social en el slot 8 de la hotbar, configurable desde `social-menu-item`.
+# MDVSocial 1.5.1
 
 Plugin social modular para MDVCRAFT.
+
+
+## MDVSocial 1.5.1
+
+- La carta automática de bienvenida se entrega silenciosamente por defecto.
+- Ya no aparece `Mensaje faltante: mail-received` al primer ingreso.
+- El rango del hover y del menú se obtiene del grupo directo de LuckPerms con mayor peso.
+- Los nombres visuales de grupos pueden personalizarse en `interactive-chat.profile.group-display-names`.
+
+## MDVSocial 1.5.0
+
+- Nombre interactivo en el chat usando Paper Adventure.
+- Hover configurable con nivel, raza, rango, título y clan.
+- Clic normal sobre el nombre abre `Menus/jugador_opciones.yml`.
+- Shift + clic sobre el nombre inserta `/msg <jugador> `.
+- Menú general de jugador separado de `amigo_opciones.yml`.
+- Solicitudes de amistad mediante la API real de MMOCore.
+- Acciones para clan, carta, Grupo de Aventura y TPA.
+- Clic derecho configurable en botones mediante `right-action`.
+- Nuevos placeholders de menú: `{target_level}`, `{target_class}`, `{target_rank}`, `{target_title}` y `{target_clan}`.
+- Los títulos con `hidden: true` no aparecen en títulos bloqueados, pero siguen siendo equipables por quien tenga permiso.
 
 ## MDVSocial 1.4.1
 

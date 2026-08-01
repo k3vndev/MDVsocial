@@ -2,6 +2,12 @@ package com.mdvcraft.mdvsocial;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import io.papermc.paper.chat.ChatRenderer;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -19,6 +25,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -38,6 +45,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.io.BukkitObjectInputStream;
 
 import java.io.ByteArrayInputStream;
@@ -76,6 +84,11 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private final List<Integer> listSlots = new ArrayList<>();
     private final Map<UUID, MailComposeSession> mailSessions = new ConcurrentHashMap<>();
     private final Map<UUID, PermissionAttachment> scoreboardPartyAttachments = new ConcurrentHashMap<>();
+    private final Map<UUID, ChatProfileSnapshot> interactiveChatProfiles = new ConcurrentHashMap<>();
+    private final LegacyComponentSerializer legacyAmpersand = LegacyComponentSerializer.legacyAmpersand();
+    private BukkitTask interactiveChatProfileTask;
+    private volatile boolean interactiveChatEnabled;
+    private volatile List<String> interactiveHoverTemplate = List.of();
 
     private File dataFile;
     private YamlConfiguration data;
@@ -104,6 +117,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private org.bukkit.NamespacedKey keyFriendTargetName;
     private org.bukkit.NamespacedKey keyFriendTargetOnline;
     private org.bukkit.NamespacedKey keyRequiredPermission;
+    private org.bukkit.NamespacedKey keyRightAction;
+    private org.bukkit.NamespacedKey keyRightCommands;
 
     @Override
     public void onEnable() {
@@ -125,6 +140,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         keyFriendTargetName = new org.bukkit.NamespacedKey(this, "friend_target_name");
         keyFriendTargetOnline = new org.bukkit.NamespacedKey(this, "friend_target_online");
         keyRequiredPermission = new org.bukkit.NamespacedKey(this, "required_permission");
+        keyRightAction = new org.bukkit.NamespacedKey(this, "right_action");
+        keyRightCommands = new org.bukkit.NamespacedKey(this, "right_commands");
 
         saveDefaultConfig();
         loadAll();
@@ -166,12 +183,18 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         playerHomesMenuManager.enable();
         mmoItemsBrowserManager = new MMOItemsBrowserManager(this);
         mmoItemsBrowserManager.enable();
+        startInteractiveChatProfileTask();
 
-        getLogger().info("MDVSocial 1.4.1 habilitado.");
+        getLogger().info("MDVSocial 1.5.1 habilitado.");
     }
 
     @Override
     public void onDisable() {
+        if (interactiveChatProfileTask != null) {
+            interactiveChatProfileTask.cancel();
+            interactiveChatProfileTask = null;
+        }
+        interactiveChatProfiles.clear();
         if (socialMenuItemManager != null) {
             socialMenuItemManager.disable();
         }
@@ -330,7 +353,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 msg(player, "no-permission");
                 return true;
             }
-            if (args.length >= 1) {
+            if (args.length >= 2 && isPlayerOptionsAlias(args[0])) {
+                openPlayerOptionsMenu(player, args[1]);
+            } else if (args.length >= 1) {
                 openRequestedSocialMenu(player, args[0], args.length >= 2 ? parsePage(args[1]) : 1);
             } else {
                 openSocialStart(player);
@@ -439,6 +464,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             if (playerHomesMenuManager != null) {
                 playerHomesMenuManager.reload();
             }
+            startInteractiveChatProfileTask();
             msg(sender, "reloaded");
             return true;
         }
@@ -783,6 +809,14 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 Files.writeString(amigoOpciones.toPath(), defaultAmigoOpcionesMenuYaml(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 getLogger().warning("No se pudo crear Menus/amigo_opciones.yml: " + e.getMessage());
+            }
+        }
+        File jugadorOpciones = new File(folder, "jugador_opciones.yml");
+        if (!jugadorOpciones.exists()) {
+            try {
+                Files.writeString(jugadorOpciones.toPath(), defaultJugadorOpcionesMenuYaml(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                getLogger().warning("No se pudo crear Menus/jugador_opciones.yml: " + e.getMessage());
             }
         }
         File admin = new File(folder, "admin.yml");
@@ -1262,6 +1296,175 @@ items:
     }
 
 
+    private String defaultJugadorOpcionesMenuYaml() {
+        return """
+# ==========================================================
+# MDVSocial - Opciones de cualquier jugador
+#
+# Se abre desde el nombre interactivo del chat:
+# /social jugador <nombre>
+# ==========================================================
+title: '&8&lOpciones de {target}'
+size: 27
+
+items:
+  perfil:
+    slot: 4
+    material: PLAYER_HEAD
+    head-owner: '{target}'
+    name: '&e&lPerfil de {target}'
+    lore:
+      - ''
+      - '&e&l● &7&lInformación'
+      - '&7Estado: {target_status}'
+      - '&7Título: &r{target_title}'
+      - '&7Rango: &r{target_rank}'
+      - '&7Clan: &r{target_clan}'
+      - '&7Nivel: &e{target_level}'
+      - '&7Raza: &f{target_class}'
+      - ''
+      - '&bClick derecho &7para preparar'
+      - '&7un mensaje privado.'
+    right-action: SUGGEST_MSG_TARGET
+    close-on-click: true
+
+  solicitud_amistad:
+    slot: 10
+    material: PLAYER_HEAD
+    head-owner: '{target}'
+    name: '&b&lEnviar solicitud de amistad'
+    lore:
+      - ''
+      - '&b&l● &7&lAmistad de MMOCore'
+      - '&7Envía una solicitud a'
+      - '&e{target}&7.'
+      - ''
+      - '&eClick para enviar.'
+    action: INVITE_FRIEND_TARGET
+    visible-when: online_not_friend
+    close-on-click: true
+
+  amistad_existente:
+    slot: 10
+    material: LIME_DYE
+    name: '&a&lYa son amigos'
+    lore:
+      - ''
+      - '&7{target} ya forma parte'
+      - '&7de tu lista de amigos.'
+    visible-when: friend
+
+  amistad_desconectada:
+    slot: 10
+    material: GRAY_DYE
+    name: '&8&lAmistad no disponible'
+    lore:
+      - ''
+      - '&7Las solicitudes de amistad'
+      - '&7requieren que ambos jugadores'
+      - '&7estén conectados.'
+    visible-when: offline_not_friend
+
+  clan_invite:
+    slot: 11
+    material: PURPLE_BANNER
+    name: '&5&lInvitar al clan'
+    lore:
+      - ''
+      - '&5&l● &7&lInvitación de clan'
+      - '&7Envía una invitación a'
+      - '&e{target}&7.'
+      - ''
+      - '&8Puede funcionar aunque esté'
+      - '&8desconectado.'
+      - ''
+      - '&eClick para invitar.'
+    action: COMMAND_PLAYER
+    close-on-click: true
+    commands:
+      - 'clan invitar {target}'
+
+  carta:
+    slot: 13
+    material: WRITABLE_BOOK
+    name: '&6&lEnviar carta'
+    lore:
+      - ''
+      - '&6&l● &7&lCorrespondencia'
+      - '&7Escribe una carta para'
+      - '&e{target}&7.'
+      - ''
+      - '&eClick para escribir.'
+    action: START_MAIL_SEND_TARGET
+    close-on-click: true
+
+  party:
+    slot: 15
+    material: TOTEM_OF_UNDYING
+    name: '&d&lInvitar al grupo'
+    lore:
+      - ''
+      - '&d&l● &7&lGrupo de Aventura'
+      - '&7Invita a &e{target} &7a tu'
+      - '&7party temporal.'
+      - ''
+      - '&7Si no tienes party,'
+      - '&7se creará automáticamente.'
+      - ''
+      - '&eClick para invitar.'
+    action: INVITE_PARTY_TARGET
+    visible-when: online_not_self
+    close-on-click: true
+
+  party_offline:
+    slot: 15
+    material: GRAY_DYE
+    name: '&8&lGrupo no disponible'
+    lore:
+      - ''
+      - '&7El jugador debe estar'
+      - '&7conectado para recibir'
+      - '&7una invitación de grupo.'
+    visible-when: offline
+
+  tpa:
+    slot: 16
+    material: ENDER_PEARL
+    name: '&a&lSolicitar viaje'
+    lore:
+      - ''
+      - '&a&l● &7&lTeletransporte'
+      - '&7Envía una solicitud de TPA'
+      - '&7a &e{target}&7.'
+      - ''
+      - '&eClick para solicitar.'
+    action: COMMAND_PLAYER
+    visible-when: online_not_self
+    commands:
+      - 'tpa {target}'
+
+  tpa_offline:
+    slot: 16
+    material: GRAY_DYE
+    name: '&8&lViaje no disponible'
+    lore:
+      - ''
+      - '&7El jugador no está'
+      - '&7conectado actualmente.'
+    visible-when: offline
+
+  cerrar:
+    slot: 22
+    material: BARRIER
+    name: '&c&lCerrar'
+    lore:
+      - ''
+      - '&7Cierra este menú.'
+    action: CLOSE
+""";
+    }
+
+
     private String defaultAdminMenuYaml() {
         return """
 # ==========================================================
@@ -1544,11 +1747,15 @@ items:
                 getLogger().warning("Slot invalido en menu " + def.id + " item " + key + ": " + slot);
                 continue;
             }
-            String action = normalizeAction(sec.getString("action", ""));
+            String action = normalizeAction(sec.getString("left-action", sec.getString("action", "")));
+            String rightAction = normalizeAction(sec.getString("right-action", ""));
             String target = normalize(sec.getString("target-menu", sec.getString("menu", "")));
             List<String> commands = new ArrayList<>(sec.getStringList("commands"));
             String singleCommand = sec.getString("command", "");
             if (commands.isEmpty() && singleCommand != null && !singleCommand.isBlank()) commands.add(singleCommand);
+            List<String> rightCommands = new ArrayList<>(sec.getStringList("right-commands"));
+            String singleRightCommand = sec.getString("right-command", "");
+            if (rightCommands.isEmpty() && singleRightCommand != null && !singleRightCommand.isBlank()) rightCommands.add(singleRightCommand);
             CustomMenuItem item = new CustomMenuItem(
                     key,
                     slot,
@@ -1559,8 +1766,10 @@ items:
                     sec.getString("head-owner", ""),
                     readTexture(sec),
                     action,
+                    rightAction,
                     target,
                     commands,
+                    rightCommands,
                     sec.getBoolean("close-on-click", true),
                     sec.getString("visible-when", sec.getString("show-when", "always")),
                     sec.getString("condition-placeholder", sec.getString("placeholder", "")),
@@ -1593,6 +1802,8 @@ items:
             case "START_MAIL", "START_MAIL_SEND", "SEND_MAIL", "ENVIAR_CARTA" -> "START_MAIL_SEND";
             case "START_MAIL_TARGET", "START_MAIL_SEND_TARGET", "SEND_MAIL_TARGET", "ENVIAR_CARTA_TARGET", "ENVIAR_CARTA_AMIGO" -> "START_MAIL_SEND_TARGET";
             case "INVITE_PARTY_TARGET", "PARTY_INVITE_TARGET", "INVITAR_PARTY", "INVITAR_GRUPO", "INVITE_FRIEND_PARTY" -> "INVITE_PARTY_TARGET";
+            case "INVITE_FRIEND_TARGET", "FRIEND_INVITE_TARGET", "SEND_FRIEND_REQUEST", "ENVIAR_SOLICITUD_AMISTAD" -> "INVITE_FRIEND_TARGET";
+            case "SUGGEST_MSG_TARGET", "PREPARE_MSG_TARGET", "PRIVATE_MESSAGE_TARGET", "MENSAJE_PRIVADO_TARGET" -> "SUGGEST_MSG_TARGET";
             case "START_MAIL_BLOCK", "BLOCK_MAIL", "BLOQUEAR_CARTAS" -> "START_MAIL_BLOCK";
             case "START_MAIL_UNBLOCK", "UNBLOCK_MAIL", "DESBLOQUEAR_CARTAS" -> "START_MAIL_UNBLOCK";
             default -> a;
@@ -1630,7 +1841,7 @@ items:
 
         List<CustomMenuItem> items = def.pages.getOrDefault(page, Collections.emptyList());
         for (CustomMenuItem menuItem : items) {
-            if (!menuItem.isVisible(targetUuid, targetOnline)) continue;
+            if (!menuItem.isVisible(this, player, targetUuid, targetOnline)) continue;
             if (!menuItem.permission.isBlank() && !player.hasPermission(menuItem.permission) && menuItem.hideWithoutPermission) continue;
             if (menuItem.slot >= 0 && menuItem.slot < inv.getSize()) inv.setItem(menuItem.slot, customMenuItemStack(player, menuItem, targetUuid, targetName, targetOnline));
         }
@@ -1665,6 +1876,7 @@ items:
         for (String line : def.lore) lore.add(color(applyTargetPlaceholders(line, player, targetUuid, targetName, targetOnline)));
         if (!lore.isEmpty()) meta.setLore(lore);
         if (def.action != null && !def.action.isBlank()) meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, def.action);
+        if (def.rightAction != null && !def.rightAction.isBlank()) meta.getPersistentDataContainer().set(keyRightAction, PersistentDataType.STRING, def.rightAction);
         if (def.targetMenu != null && !def.targetMenu.isBlank()) meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, def.targetMenu);
         if (def.conditionPlaceholder != null && !def.conditionPlaceholder.isBlank()) meta.getPersistentDataContainer().set(keyConditionPlaceholder, PersistentDataType.STRING, def.conditionPlaceholder);
         if (def.conditionEquals != null && !def.conditionEquals.isBlank()) meta.getPersistentDataContainer().set(keyConditionEquals, PersistentDataType.STRING, def.conditionEquals);
@@ -1675,6 +1887,7 @@ items:
         if (targetName != null && !targetName.isBlank()) meta.getPersistentDataContainer().set(keyFriendTargetName, PersistentDataType.STRING, targetName);
         meta.getPersistentDataContainer().set(keyFriendTargetOnline, PersistentDataType.STRING, String.valueOf(targetOnline));
         if (!def.commands.isEmpty()) meta.getPersistentDataContainer().set(keyCommands, PersistentDataType.STRING, String.join("\n", def.commands));
+        if (!def.rightCommands.isEmpty()) meta.getPersistentDataContainer().set(keyRightCommands, PersistentDataType.STRING, String.join("\n", def.rightCommands));
         if (def.sound != null && !def.sound.isBlank()) meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, def.sound);
         if (def.permission != null && !def.permission.isBlank()) meta.getPersistentDataContainer().set(keyRequiredPermission, PersistentDataType.STRING, def.permission);
         meta.getPersistentDataContainer().set(keyCloseOnClick, PersistentDataType.STRING, String.valueOf(def.closeOnClick));
@@ -1820,10 +2033,11 @@ items:
     }
 
     private String applyTargetPlaceholders(String input, Player player, UUID targetUuid, String targetName, boolean targetOnline) {
-        String out = applyPlayerPlaceholders(input, player);
+        if (input == null) return "";
         String safeName = targetName == null || targetName.isBlank() ? "jugador" : targetName;
         String uuidText = targetUuid == null ? "" : targetUuid.toString();
-        out = out
+
+        String out = input
                 .replace("{target}", safeName)
                 .replace("{target_name}", safeName)
                 .replace("{friend}", safeName)
@@ -1834,6 +2048,23 @@ items:
                 .replace("{friend_online}", targetOnline ? "true" : "false")
                 .replace("{target_status}", targetOnline ? "&aEn línea" : "&7Desconectado")
                 .replace("{friend_status}", targetOnline ? "&aEn línea" : "&7Desconectado");
+
+        ChatProfileSnapshot targetProfile = resolveTargetProfile(targetUuid, safeName, targetOnline);
+        out = out
+                .replace("{target_level}", targetProfile.level)
+                .replace("{target_class}", targetProfile.race)
+                .replace("{target_race}", targetProfile.race)
+                .replace("{target_title}", targetProfile.title)
+                .replace("{target_rank}", targetProfile.rank)
+                .replace("{target_clan}", targetProfile.clan)
+                .replace("{target_is_friend}", isMMOCoreFriend(player, targetUuid) ? "true" : "false");
+
+        out = applyPlayerPlaceholders(out, player);
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            try {
+                out = PlaceholderAPI.setPlaceholders(player, out);
+            } catch (Throwable ignored) { }
+        }
         return out;
     }
 
@@ -1841,6 +2072,17 @@ items:
         try {
             String value = PlaceholderAPI.setPlaceholders(player, placeholder);
             if (value == null || value.equalsIgnoreCase(placeholder)) return "";
+            return value;
+        } catch (Throwable ignored) {
+            return "";
+        }
+    }
+
+    private String papi(OfflinePlayer player, String placeholder) {
+        if (player == null || placeholder == null || placeholder.isBlank()) return "";
+        try {
+            String value = PlaceholderAPI.setPlaceholders(player, placeholder);
+            if (value == null || value.equalsIgnoreCase(placeholder) || value.contains("%")) return "";
             return value;
         } catch (Throwable ignored) {
             return "";
@@ -2197,7 +2439,13 @@ items:
         storeMail(player.getUniqueId(), player.getName(), "", author, message, expiresAt, sentAt, "WELCOME", "welcome-" + welcomeId);
         if (!force) mailData.set(marker, true);
         saveMailData();
-        msg(player, "mail-received", Map.of("sender", author));
+
+        // La carta de bienvenida se entrega silenciosamente por defecto.
+        // Esto evita mensajes de chat innecesarios al primer ingreso y, sobre todo,
+        // que una configuración antigua muestre "Mensaje faltante: mail-received".
+        if (getConfig().getBoolean("mail.welcome.notify-in-chat", false)) {
+            msg(player, "mail-received", Map.of("sender", author));
+        }
     }
 
     private void listServerMailCampaigns(CommandSender sender, int requestedPage) {
@@ -3123,6 +3371,7 @@ items:
             sendWelcomeMailIfNeeded(player, firstJoin);
         }, 20L);
         Bukkit.getScheduler().runTaskLater(this, () -> validateActiveTitle(player, true), 100L);
+        Bukkit.getScheduler().runTaskLater(this, () -> refreshInteractiveChatProfile(player), 40L);
 
         if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
         if (getConfig().getBoolean("scoreboard-party-permission.reset-on-join", true)) {
@@ -3133,8 +3382,9 @@ items:
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
         Player player = event.getPlayer();
+        interactiveChatProfiles.remove(player.getUniqueId());
+        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
         setScoreboardPartyPermission(player, false);
         PermissionAttachment attachment = scoreboardPartyAttachments.remove(player.getUniqueId());
         if (attachment != null) {
@@ -3142,6 +3392,332 @@ items:
                 attachment.remove();
             } catch (Throwable ignored) { }
         }
+    }
+
+
+    private boolean isPlayerOptionsAlias(String raw) {
+        if (raw == null) return false;
+        String value = normalize(raw);
+        return value.equals("jugador") || value.equals("player") || value.equals("perfil") || value.equals("opciones");
+    }
+
+    private void openPlayerOptionsMenu(Player viewer, String targetName) {
+        OfflinePlayer target = findKnownOfflinePlayer(targetName);
+        if (target == null) {
+            msg(viewer, "social-target-not-found");
+            return;
+        }
+        String menu = normalize(getConfig().getString("interactive-chat.options-menu", "jugador_opciones"));
+        String resolvedName = target.getName() == null || target.getName().isBlank() ? targetName : target.getName();
+        boolean online = Bukkit.getPlayer(target.getUniqueId()) != null;
+        openCustomMenu(viewer, menu, 1, "", 1, target.getUniqueId(), resolvedName, online);
+    }
+
+    private void startInteractiveChatProfileTask() {
+        if (interactiveChatProfileTask != null) {
+            interactiveChatProfileTask.cancel();
+            interactiveChatProfileTask = null;
+        }
+        interactiveChatProfiles.clear();
+        interactiveChatEnabled = getConfig().getBoolean("interactive-chat.enabled", true);
+        interactiveHoverTemplate = List.copyOf(getConfig().getStringList("interactive-chat.hover"));
+        if (!interactiveChatEnabled) return;
+
+        refreshAllInteractiveChatProfiles();
+        long interval = Math.max(20L, getConfig().getLong("interactive-chat.profile-cache-refresh-ticks", 100L));
+        interactiveChatProfileTask = Bukkit.getScheduler().runTaskTimer(this, this::refreshAllInteractiveChatProfiles, interval, interval);
+    }
+
+    private void refreshAllInteractiveChatProfiles() {
+        if (!interactiveChatEnabled) return;
+        for (Player player : Bukkit.getOnlinePlayers()) refreshInteractiveChatProfile(player);
+        interactiveChatProfiles.keySet().removeIf(uuid -> Bukkit.getPlayer(uuid) == null);
+    }
+
+    private void refreshInteractiveChatProfile(Player player) {
+        if (player == null || !player.isOnline()) return;
+        interactiveChatProfiles.put(player.getUniqueId(), buildChatProfile(player));
+    }
+
+    private ChatProfileSnapshot buildChatProfile(Player player) {
+        String levelPlaceholder = getConfig().getString("interactive-chat.profile.level-placeholder", "%mmocore_level%");
+        String level = cleanProfileValue(papi(player, levelPlaceholder), "&7Desconocido");
+
+        String race = "";
+        List<String> racePlaceholders = getConfig().getStringList("interactive-chat.profile.race-placeholders");
+        if (racePlaceholders.isEmpty()) racePlaceholders = List.of("%mmocore_race%", "%mmocore_class%");
+        for (String placeholder : racePlaceholders) {
+            race = cleanProfileValue(papi(player, placeholder), "");
+            if (!race.isBlank()) break;
+        }
+        if (race.isBlank()) race = "&7Sin raza";
+
+        TitleDef equipped = getActiveTitle(player);
+        String title = equipped == null ? getConfig().getString("interactive-chat.profile.no-title-text", "&7Sin título") : equipped.display;
+        String rank = resolveRankDisplay(player);
+
+        String clanPlaceholder = getConfig().getString("interactive-chat.profile.clan-placeholder", "%mdvclans_clan_line%");
+        String clan = cleanProfileValue(papi(player, clanPlaceholder), getConfig().getString("interactive-chat.profile.no-clan-text", "&8Sin clan"));
+
+        return new ChatProfileSnapshot(
+                player.getName(),
+                toAmpersand(level),
+                toAmpersand(race),
+                toAmpersand(title),
+                toAmpersand(rank),
+                toAmpersand(clan)
+        );
+    }
+
+    private ChatProfileSnapshot resolveTargetProfile(UUID targetUuid, String targetName, boolean targetOnline) {
+        if (targetUuid != null) {
+            ChatProfileSnapshot cached = interactiveChatProfiles.get(targetUuid);
+            if (cached != null) return cached;
+            Player online = Bukkit.getPlayer(targetUuid);
+            if (online != null) {
+                ChatProfileSnapshot built = buildChatProfile(online);
+                interactiveChatProfiles.put(targetUuid, built);
+                return built;
+            }
+        }
+
+        OfflinePlayer target = targetUuid == null ? Bukkit.getOfflinePlayer(targetName) : Bukkit.getOfflinePlayer(targetUuid);
+        String levelPlaceholder = getConfig().getString("interactive-chat.profile.level-placeholder", "%mmocore_level%");
+        String level = cleanProfileValue(papi(target, levelPlaceholder), "&7Desconocido");
+
+        String race = "";
+        List<String> racePlaceholders = getConfig().getStringList("interactive-chat.profile.race-placeholders");
+        if (racePlaceholders.isEmpty()) racePlaceholders = List.of("%mmocore_race%", "%mmocore_class%");
+        for (String placeholder : racePlaceholders) {
+            race = cleanProfileValue(papi(target, placeholder), "");
+            if (!race.isBlank()) break;
+        }
+        if (race.isBlank()) race = "&7Sin raza";
+
+        TitleDef equipped = targetUuid == null ? null : getEquippedTitle(targetUuid);
+        String title = equipped == null ? getConfig().getString("interactive-chat.profile.no-title-text", "&7Sin título") : equipped.display;
+        String rank = resolveRankDisplay(target);
+
+        String clanPlaceholder = getConfig().getString("interactive-chat.profile.clan-placeholder", "%mdvclans_clan_line%");
+        String clan = cleanProfileValue(papi(target, clanPlaceholder), getConfig().getString("interactive-chat.profile.no-clan-text", "&8Sin clan"));
+
+        return new ChatProfileSnapshot(
+                targetName,
+                toAmpersand(level),
+                toAmpersand(race),
+                toAmpersand(title),
+                toAmpersand(rank),
+                toAmpersand(clan)
+        );
+    }
+
+    private String resolveRankDisplay(OfflinePlayer player) {
+        if (player == null) return getConfig().getString("interactive-chat.profile.no-rank-text", "&7Sin rango");
+
+        // Fuente principal: grupo directo de LuckPerms con mayor peso.
+        // El placeholder oficial respeta el peso configurado en LuckPerms y no depende
+        // del orden de permisos heredados ni del primary group manual del jugador.
+        List<String> highestWeightPlaceholders = getConfig().getStringList("interactive-chat.profile.highest-weight-group-placeholders");
+        if (highestWeightPlaceholders.isEmpty()) {
+            highestWeightPlaceholders = List.of("%luckperms_highest_group_by_weight%");
+        }
+        for (String placeholder : highestWeightPlaceholders) {
+            String group = cleanProfileValue(papi(player, placeholder), "");
+            if (!group.isBlank()) return resolveLuckPermsGroupDisplay(group);
+        }
+
+        // Compatibilidad para instalaciones donde el placeholder anterior no esté disponible.
+        List<String> primaryGroupPlaceholders = getConfig().getStringList("interactive-chat.profile.primary-group-placeholders");
+        if (primaryGroupPlaceholders.isEmpty()) {
+            primaryGroupPlaceholders = List.of("%luckperms_primary_group_name%", "%luckperms_primary_group%");
+        }
+        for (String placeholder : primaryGroupPlaceholders) {
+            String group = cleanProfileValue(papi(player, placeholder), "");
+            if (!group.isBlank()) return resolveLuckPermsGroupDisplay(group);
+        }
+
+        // Último fallback para servidores sin placeholders de LuckPerms.
+        Player online = player.getPlayer();
+        if (online != null) {
+            List<String> priority = getConfig().getStringList("interactive-chat.profile.rank-priority-fallback");
+            if (priority.isEmpty()) priority = List.of("heroe", "noble", "campeon", "caballero", "creador", "embajador", "aventurero");
+            for (String raw : priority) {
+                RankDef rank = ranks.get(normalize(raw));
+                if (rank != null && rank.permission != null && !rank.permission.isBlank() && online.hasPermission(rank.permission)) {
+                    return rank.display;
+                }
+            }
+        }
+
+        return getConfig().getString("interactive-chat.profile.no-rank-text", "&7Sin rango");
+    }
+
+    private String resolveLuckPermsGroupDisplay(String rawGroup) {
+        String plain = ChatColor.stripColor(color(rawGroup));
+        if (plain == null || plain.isBlank()) {
+            return getConfig().getString("interactive-chat.profile.no-rank-text", "&7Sin rango");
+        }
+
+        String groupId = normalize(plain).replace('-', '_');
+        String custom = getConfig().getString("interactive-chat.profile.group-display-names." + groupId, "");
+        if (custom != null && !custom.isBlank()) return custom;
+
+        RankDef configured = ranks.get(groupId);
+        if (configured != null) return configured.display;
+
+        return "&f" + prettifyGroupName(plain);
+    }
+
+    private String prettifyGroupName(String raw) {
+        if (raw == null || raw.isBlank()) return "Sin rango";
+        String normalized = raw.trim().replace('_', ' ').replace('-', ' ');
+        StringBuilder out = new StringBuilder(normalized.length());
+        boolean capitalize = true;
+        for (char c : normalized.toCharArray()) {
+            if (Character.isWhitespace(c)) {
+                out.append(c);
+                capitalize = true;
+            } else if (capitalize) {
+                out.append(Character.toUpperCase(c));
+                capitalize = false;
+            } else {
+                out.append(Character.toLowerCase(c));
+            }
+        }
+        return out.toString();
+    }
+
+    private String cleanProfileValue(String value, String fallback) {
+        if (value == null) return fallback == null ? "" : fallback;
+        String clean = value.trim();
+        if (clean.isBlank() || clean.equalsIgnoreCase("none") || clean.equalsIgnoreCase("null")
+                || clean.equalsIgnoreCase("nomatch") || clean.equalsIgnoreCase("n/a") || clean.contains("%")) {
+            return fallback == null ? "" : fallback;
+        }
+        return clean;
+    }
+
+    private String toAmpersand(String value) {
+        return value == null ? "" : value.replace('§', '&');
+    }
+
+    private Component buildInteractiveHover(ChatProfileSnapshot profile) {
+        List<String> lines = interactiveHoverTemplate;
+        if (lines.isEmpty()) {
+            lines = List.of(
+                    "&6&l{player}",
+                    "",
+                    "&e&l● &7&lInformación",
+                    "&7Nivel: &e{level}",
+                    "&7Raza: &f{race}",
+                    "&7Rango: &r{rank}",
+                    "&7Título: &r{title}",
+                    "&7Clan: &r{clan}",
+                    "",
+                    "&aClic para mirar opciones",
+                    "&bShift + clic para escribirle"
+            );
+        }
+
+        String rendered = lines.stream()
+                .map(line -> line
+                        .replace("{player}", profile.playerName)
+                        .replace("{level}", profile.level)
+                        .replace("{race}", profile.race)
+                        .replace("{class}", profile.race)
+                        .replace("{rank}", profile.rank)
+                        .replace("{title}", profile.title)
+                        .replace("{clan}", profile.clan))
+                .collect(Collectors.joining("\n"));
+        return legacyAmpersand.deserialize(rendered);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onInteractiveChat(AsyncChatEvent event) {
+        if (!interactiveChatEnabled) return;
+        Player sender = event.getPlayer();
+        if (mailSessions.containsKey(sender.getUniqueId())) return;
+
+        ChatProfileSnapshot profile = interactiveChatProfiles.get(sender.getUniqueId());
+        if (profile == null) return;
+
+        ChatRenderer previous = event.renderer();
+        Component hover = buildInteractiveHover(profile);
+        String optionsCommand = "/social jugador " + sender.getName();
+        String messageCommand = "/msg " + sender.getName() + " ";
+
+        event.renderer((source, displayName, message, viewer) -> {
+            Component interactiveName = displayName
+                    .hoverEvent(HoverEvent.showText(hover))
+                    .clickEvent(ClickEvent.runCommand(optionsCommand))
+                    .insertion(messageCommand);
+            return previous.render(source, interactiveName, message, viewer);
+        });
+    }
+
+    private boolean isMMOCoreFriend(Player player, UUID targetUuid) {
+        if (player == null || targetUuid == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore")) return false;
+        try {
+            Object playerData = getMMOCorePlayerData(player);
+            if (playerData == null) return false;
+            Method hasFriend = playerData.getClass().getMethod("hasFriend", UUID.class);
+            Object result = hasFriend.invoke(playerData, targetUuid);
+            return result instanceof Boolean value && value;
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private void inviteMMOCoreFriend(Player player, UUID targetUuid, String fallbackName) {
+        if (targetUuid == null) {
+            msg(player, "social-target-not-found");
+            return;
+        }
+        Player target = Bukkit.getPlayer(targetUuid);
+        String targetName = target != null ? target.getName() : (fallbackName == null || fallbackName.isBlank() ? "jugador" : fallbackName);
+
+        if (targetUuid.equals(player.getUniqueId())) {
+            msg(player, "friend-self");
+            return;
+        }
+        if (target == null) {
+            msg(player, "friend-target-offline", Map.of("target", targetName));
+            return;
+        }
+        if (!Bukkit.getPluginManager().isPluginEnabled("MMOCore")) {
+            msg(player, "friend-mmocore-missing");
+            return;
+        }
+        if (isMMOCoreFriend(player, targetUuid)) {
+            msg(player, "friend-already", Map.of("target", targetName));
+            return;
+        }
+
+        try {
+            Object playerData = getMMOCorePlayerData(player);
+            Object targetData = getMMOCorePlayerData(target);
+            if (playerData == null || targetData == null) {
+                msg(player, "friend-error");
+                return;
+            }
+            Method sendFriendRequest = playerData.getClass().getMethod("sendFriendRequest", playerData.getClass());
+            sendFriendRequest.invoke(playerData, targetData);
+            msg(player, "friend-request-sent", Map.of("target", targetName));
+        } catch (Throwable ex) {
+            getLogger().warning("No se pudo enviar solicitud de amistad MMOCore: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            msg(player, "friend-error");
+        }
+    }
+
+    private void suggestPrivateMessage(Player player, String targetName) {
+        String safeName = targetName == null || targetName.isBlank() ? "jugador" : targetName;
+        String command = "/msg " + safeName + " ";
+        String configured = getConfig().getString("messages.private-message-suggest",
+                "&bHaz clic aquí para escribirle a &e{target}&b.");
+        Component prompt = legacyAmpersand.deserialize(configured.replace("{target}", safeName))
+                .clickEvent(ClickEvent.suggestCommand(command))
+                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&7Preparar &f" + command)));
+        player.sendMessage(prompt);
     }
 
     private void syncAllScoreboardPartyPermissions() {
@@ -3365,9 +3941,9 @@ items:
             case "BACK" -> "back";
             case "PREVIOUS_PAGE", "PREV_PAGE" -> "page";
             case "NEXT_PAGE" -> "page";
-            case "OPEN_MENU", "OPEN_CONDITIONAL_MENU", "OPEN_MAIN", "OPEN_TITLES", "OPEN_TITLES_HOME", "OPEN_MY_TITLES", "OPEN_SHOP", "OPEN_LOCKED", "OPEN_RANKS", "OPEN_MAILBOX", "READ_MAIL", "MAIL_BACK" -> "open";
+            case "OPEN_MENU", "OPEN_CONDITIONAL_MENU", "OPEN_MAIN", "OPEN_TITLES", "OPEN_TITLES_HOME", "OPEN_MY_TITLES", "OPEN_SHOP", "OPEN_LOCKED", "OPEN_RANKS", "OPEN_MAILBOX", "READ_MAIL", "MAIL_BACK", "SUGGEST_MSG_TARGET" -> "open";
             case "LOCKED_TITLE" -> "invalid";
-            case "BUY_TITLE", "EQUIP_TITLE", "CLEAR_TITLE", "ACCEPT_CLAN_INVITE" -> "confirm";
+            case "BUY_TITLE", "EQUIP_TITLE", "CLEAR_TITLE", "ACCEPT_CLAN_INVITE", "INVITE_FRIEND_TARGET" -> "confirm";
             case "DELETE_MAIL", "REJECT_CLAN_INVITE", "BLOCK_MAIL_SENDER" -> "danger";
             default -> "default";
         };
@@ -3415,7 +3991,7 @@ items:
             case "back" -> new UiSoundDef(Sound.UI_BUTTON_CLICK, 0.55F, 0.85F);
             case "close" -> new UiSoundDef(Sound.BLOCK_CHEST_CLOSE, 0.55F, 1.15F);
             case "page", "next_page", "previous_page", "prev_page" -> new UiSoundDef(Sound.ITEM_BOOK_PAGE_TURN, 0.7F, 1.15F);
-            case "confirm", "buy_title", "equip_title", "clear_title", "accept_clan_invite" -> new UiSoundDef(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.65F, 1.25F);
+            case "confirm", "buy_title", "equip_title", "clear_title", "accept_clan_invite", "invite_friend_target" -> new UiSoundDef(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.65F, 1.25F);
             case "danger", "delete_mail", "reject_clan_invite", "block_mail_sender" -> new UiSoundDef(Sound.ENTITY_VILLAGER_NO, 0.6F, 0.85F);
             case "invalid", "locked_title" -> new UiSoundDef(Sound.BLOCK_NOTE_BLOCK_BASS, 0.65F, 0.65F);
             default -> null;
@@ -3482,7 +4058,9 @@ items:
         if (clicked == null || clicked.getType().isAir() || !clicked.hasItemMeta()) return;
         ItemMeta meta = clicked.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        String action = pdc.get(keyAction, PersistentDataType.STRING);
+        boolean rightClick = event.isRightClick();
+        String action = rightClick ? pdc.get(keyRightAction, PersistentDataType.STRING) : null;
+        if (action == null || action.isBlank()) action = pdc.get(keyAction, PersistentDataType.STRING);
         if (action == null || action.isBlank()) return;
         String requiredPermission = pdc.get(keyRequiredPermission, PersistentDataType.STRING);
         if (requiredPermission != null && !requiredPermission.isBlank() && !player.hasPermission(requiredPermission)) {
@@ -3523,7 +4101,7 @@ items:
                 if (holder.previousMenu != null && !holder.previousMenu.isBlank()) openCustomMenu(player, holder.previousMenu, holder.previousPage, "", 1);
                 else openSocialStart(player);
             }
-            case "COMMAND_PLAYER" -> runPlayerCommandsFromPdc(player, pdc, holder);
+            case "COMMAND_PLAYER" -> runPlayerCommandsFromPdc(player, pdc, holder, rightClick);
             case "OPEN_MAILBOX" -> openMailbox(player, 0);
             case "OPEN_MMOITEMS_BROWSER" -> {
                 if (mmoItemsBrowserManager == null) player.sendMessage(color(getPrefix() + "&cLa biblioteca de objetos no está disponible."));
@@ -3540,6 +4118,14 @@ items:
             case "INVITE_PARTY_TARGET" -> {
                 if (shouldCloseOnClick(pdc)) player.closeInventory();
                 inviteFriendToParty(player, holder.targetUuid, holder.targetName);
+            }
+            case "INVITE_FRIEND_TARGET" -> {
+                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                inviteMMOCoreFriend(player, holder.targetUuid, holder.targetName);
+            }
+            case "SUGGEST_MSG_TARGET" -> {
+                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                suggestPrivateMessage(player, holder.targetName);
             }
             case "START_MAIL_BLOCK" -> {
                 if (shouldCloseOnClick(pdc)) player.closeInventory();
@@ -3616,11 +4202,16 @@ items:
 
 
     private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc) {
-        runPlayerCommandsFromPdc(player, pdc, null);
+        runPlayerCommandsFromPdc(player, pdc, null, false);
     }
 
     private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc, MenuHolder holder) {
-        String raw = pdc.get(keyCommands, PersistentDataType.STRING);
+        runPlayerCommandsFromPdc(player, pdc, holder, false);
+    }
+
+    private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc, MenuHolder holder, boolean rightClick) {
+        String raw = rightClick ? pdc.get(keyRightCommands, PersistentDataType.STRING) : null;
+        if (raw == null || raw.isBlank()) raw = pdc.get(keyCommands, PersistentDataType.STRING);
         if (raw == null || raw.isBlank()) return;
         String close = pdc.get(keyCloseOnClick, PersistentDataType.STRING);
         if (close == null || Boolean.parseBoolean(close)) player.closeInventory();
@@ -4328,8 +4919,11 @@ items:
         if (commandName.equals("social")) {
             if (args.length == 1) {
                 List<String> menus = new ArrayList<>(customMenus.keySet());
-                menus.addAll(Arrays.asList("main", "titulos", "mis_titulos", "tienda", "rangos"));
+                menus.addAll(Arrays.asList("main", "titulos", "mis_titulos", "tienda", "rangos", "jugador"));
                 return partial(args[0], menus);
+            }
+            if (args.length == 2 && isPlayerOptionsAlias(args[0])) {
+                return partial(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
             }
             return Collections.emptyList();
         }
@@ -4485,8 +5079,10 @@ items:
         final String headOwner;
         final String texture;
         final String action;
+        final String rightAction;
         final String targetMenu;
         final List<String> commands;
+        final List<String> rightCommands;
         final boolean closeOnClick;
         final String visibleWhen;
         final String conditionPlaceholder;
@@ -4499,7 +5095,7 @@ items:
         final boolean hideWithoutPermission;
         final boolean useClanBanner;
 
-        CustomMenuItem(String id, int slot, String material, int amount, String name, List<String> lore, String headOwner, String texture, String action, String targetMenu, List<String> commands, boolean closeOnClick, String visibleWhen, String conditionPlaceholder, String conditionEquals, String trueMenu, String falseMenu, String clansMenu, String sound, String permission, boolean hideWithoutPermission, boolean useClanBanner) {
+        CustomMenuItem(String id, int slot, String material, int amount, String name, List<String> lore, String headOwner, String texture, String action, String rightAction, String targetMenu, List<String> commands, List<String> rightCommands, boolean closeOnClick, String visibleWhen, String conditionPlaceholder, String conditionEquals, String trueMenu, String falseMenu, String clansMenu, String sound, String permission, boolean hideWithoutPermission, boolean useClanBanner) {
             this.id = id;
             this.slot = slot;
             this.material = material == null ? "PAPER" : material;
@@ -4509,8 +5105,10 @@ items:
             this.headOwner = headOwner == null ? "" : headOwner;
             this.texture = texture == null ? "" : texture;
             this.action = action == null ? "" : action;
+            this.rightAction = rightAction == null ? "" : rightAction;
             this.targetMenu = targetMenu == null ? "" : targetMenu;
             this.commands = commands == null ? Collections.emptyList() : commands;
+            this.rightCommands = rightCommands == null ? Collections.emptyList() : rightCommands;
             this.closeOnClick = closeOnClick;
             this.visibleWhen = visibleWhen == null ? "always" : visibleWhen.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
             this.conditionPlaceholder = conditionPlaceholder == null ? "" : conditionPlaceholder;
@@ -4524,11 +5122,22 @@ items:
             this.useClanBanner = useClanBanner;
         }
 
-        boolean isVisible(UUID targetUuid, boolean targetOnline) {
+        boolean isVisible(MDVSocialPlugin plugin, Player viewer, UUID targetUuid, boolean targetOnline) {
+            boolean hasTarget = targetUuid != null;
+            boolean self = hasTarget && viewer.getUniqueId().equals(targetUuid);
+            boolean friend = hasTarget && plugin.isMMOCoreFriend(viewer, targetUuid);
             return switch (visibleWhen) {
-                case "online", "target_online", "friend_online" -> targetUuid != null && targetOnline;
-                case "offline", "target_offline", "friend_offline" -> targetUuid != null && !targetOnline;
-                case "target", "has_target", "friend", "has_friend" -> targetUuid != null;
+                case "online", "target_online", "friend_online" -> hasTarget && targetOnline;
+                case "offline", "target_offline", "friend_offline" -> hasTarget && !targetOnline;
+                case "target", "has_target" -> hasTarget;
+                case "friend", "is_friend", "already_friend" -> hasTarget && friend;
+                case "not_friend", "non_friend" -> hasTarget && !friend && !self;
+                case "online_friend" -> hasTarget && targetOnline && friend;
+                case "online_not_friend", "online_non_friend" -> hasTarget && targetOnline && !friend && !self;
+                case "offline_not_friend", "offline_non_friend" -> hasTarget && !targetOnline && !friend && !self;
+                case "self" -> self;
+                case "not_self", "other" -> hasTarget && !self;
+                case "online_not_self", "online_other" -> hasTarget && targetOnline && !self;
                 default -> true;
             };
         }
@@ -4577,6 +5186,24 @@ items:
             this.returnPage = normalizedReturnMenu.equalsIgnoreCase("MAILBOX") || normalizedReturnMenu.equalsIgnoreCase("buzon")
                     ? Math.max(0, returnPage)
                     : (returnPage <= 0 ? 1 : returnPage);
+        }
+    }
+
+    static final class ChatProfileSnapshot {
+        final String playerName;
+        final String level;
+        final String race;
+        final String title;
+        final String rank;
+        final String clan;
+
+        ChatProfileSnapshot(String playerName, String level, String race, String title, String rank, String clan) {
+            this.playerName = playerName == null ? "jugador" : playerName;
+            this.level = level == null ? "&7Desconocido" : level;
+            this.race = race == null ? "&7Sin raza" : race;
+            this.title = title == null ? "&7Sin título" : title;
+            this.rank = rank == null ? "&7Sin rango" : rank;
+            this.clan = clan == null ? "&8Sin clan" : clan;
         }
     }
 

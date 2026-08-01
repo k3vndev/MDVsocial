@@ -1,0 +1,58 @@
+MDVSocial 1.5.0
+=================
+
+CHAT INTERACTIVO
+- Decora el nombre que entrega el renderer existente de Paper/LPC.
+- Hover: nivel, raza, rango, título y clan.
+- Clic normal: /social jugador <nombre>.
+- Shift + clic: inserta /msg <nombre> en la barra del chat.
+- La información se guarda en una caché actualizada en el hilo principal para no consultar MMOCore/PAPI desde el evento asíncrono.
+
+MENÚ NUEVO
+- Menus/jugador_opciones.yml.
+- Es independiente de Menus/amigo_opciones.yml.
+- Perfil completo del objetivo.
+- Enviar solicitud de amistad MMOCore.
+- Invitar al clan.
+- Enviar carta.
+- Invitar al Grupo de Aventura.
+- Solicitar TPA.
+- Clic derecho sobre la cabeza prepara un mensaje privado mediante un componente suggest_command.
+
+MMOCORE
+- Usa por reflexión la API actual PlayerData#hasFriend(UUID).
+- Usa por reflexión PlayerData#sendFriendRequest(PlayerData).
+- Ambos jugadores deben estar conectados para la solicitud.
+
+MENÚS MODULARES
+- Nuevo right-action y right-commands.
+- Nuevas condiciones visible-when:
+  friend
+  not_friend
+  online_friend
+  online_not_friend
+  offline_not_friend
+  self
+  not_self
+  online_not_self
+- Nuevos placeholders:
+  {target_level}
+  {target_class}
+  {target_race}
+  {target_title}
+  {target_rank}
+  {target_clan}
+  {target_is_friend}
+
+TÍTULOS OCULTOS
+- hidden: true excluye el título de todos los menús, incluido “Títulos bloqueados”.
+- El título continúa existiendo y puede equiparse si el jugador tiene su permiso.
+
+COMPATIBILIDAD
+- Purpur/Paper 1.21.6.
+- Java 21.
+- PlaceholderAPI.
+- LuckPerms.
+- MMOCore.
+- MDVClans.
+- LPC como softdepend.
