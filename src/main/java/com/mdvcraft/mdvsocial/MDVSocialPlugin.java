@@ -5,6 +5,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -185,7 +186,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         mmoItemsBrowserManager.enable();
         startInteractiveChatProfileTask();
 
-        getLogger().info("MDVSocial 1.5.1 habilitado.");
+        getLogger().info("MDVSocial 1.5.2 habilitado.");
     }
 
     @Override
@@ -3632,7 +3633,17 @@ items:
         return legacyAmpersand.deserialize(rendered);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /**
+     * Decora el nombre una vez que todos los formateadores de chat ya instalaron
+     * su renderer. Esto es imprescindible para LPC: su renderer construye el
+     * mensaje desde un String y no utiliza sourceDisplayName, por lo que decorar
+     * displayName antes de LPC pierde el hover/click.
+     *
+     * MONITOR se usa intencionalmente como etapa final de composición: no se
+     * cancela el evento ni se cambia el mensaje escrito, solo se envuelve el
+     * renderer que quedó configurado por LPC u otro formateador.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInteractiveChat(AsyncChatEvent event) {
         if (!interactiveChatEnabled) return;
         Player sender = event.getPlayer();
@@ -3645,13 +3656,22 @@ items:
         Component hover = buildInteractiveHover(profile);
         String optionsCommand = "/social jugador " + sender.getName();
         String messageCommand = "/msg " + sender.getName() + " ";
+        String literalName = sender.getName();
 
         event.renderer((source, displayName, message, viewer) -> {
-            Component interactiveName = displayName
-                    .hoverEvent(HoverEvent.showText(hover))
-                    .clickEvent(ClickEvent.runCommand(optionsCommand))
-                    .insertion(messageCommand);
-            return previous.render(source, interactiveName, message, viewer);
+            Component rendered = previous.render(source, displayName, message, viewer);
+
+            // LPC inserta {name} directamente dentro del componente final.
+            // Reemplazamos solo la primera aparición y conservamos el estilo
+            // (color, negrita, prefijos y sufijos) aplicado por LPC.
+            return rendered.replaceText(TextReplacementConfig.builder()
+                    .matchLiteral(literalName)
+                    .times(1)
+                    .replacement(match -> match
+                            .hoverEvent(HoverEvent.showText(hover))
+                            .clickEvent(ClickEvent.runCommand(optionsCommand))
+                            .insertion(messageCommand))
+                    .build());
         });
     }
 

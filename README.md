@@ -1,9 +1,9 @@
-# MDVSocial 1.5.1
+# MDVSocial 1.5.2
 
 Plugin social modular para MDVCRAFT.
 
 
-## MDVSocial 1.5.1
+## MDVSocial 1.5.2
 
 - La carta automática de bienvenida se entrega silenciosamente por defecto.
 - Ya no aparece `Mensaje faltante: mail-received` al primer ingreso.

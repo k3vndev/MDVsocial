@@ -1,0 +1,8 @@
+# MDVSocial 1.5.2
+# No requiere nuevas claves.
+#
+# Conserva tu config.yml de MDVSocial 1.5.1.
+# Conserva también tu config.yml de LPC sin modificaciones.
+#
+# El cambio está en el código: MDVSocial decora el nombre
+# después de que LPC construye el componente final del chat.

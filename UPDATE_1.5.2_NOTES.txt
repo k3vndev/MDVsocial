@@ -1,0 +1,21 @@
+MDVSocial 1.5.2
+=================
+
+COMPATIBILIDAD LPC
+------------------
+- El chat interactivo ahora se aplica después del renderer de LPC.
+- MDVSocial toma el componente final ya formateado por LPC y decora únicamente
+  la primera aparición del nombre real del jugador.
+- Conserva chat-format, group-formats, títulos, clan, colores, sufijos y mensaje.
+- Clic normal sobre el nombre abre /social jugador <nombre>.
+- Shift + clic inserta /msg <nombre> en la barra de chat.
+
+ACTUALIZACIÓN DESDE 1.5.1
+--------------------------
+- No requiere cambios en config.yml.
+- No requiere cambios en la configuración de LPC.
+- Reemplaza solamente el JAR y reinicia completamente el servidor.
+
+FORMATO LPC PROBADO COMO OBJETIVO
+--------------------------------
+chat-format: "%mdvsocial_title_prefix% %mdvclans_chat_prefix%{username-color}{name}{suffix}&7 » &f{message}"
