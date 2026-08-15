@@ -1,283 +1,148 @@
-# MDVSocial 1.5.2
+# ServerAssistant 1.6.5
 
-Plugin social modular para MDVCRAFT.
+ServerAssistant 1.6.5 keeps the MDVCRAFT **single global conversation** design from 1.5 and merges the useful capabilities from the alternate ServerAssistant branch without restoring conversation slots or multi-request tool loops.
 
-
-## MDVSocial 1.5.2
-
-- La carta automática de bienvenida se entrega silenciosamente por defecto.
-- Ya no aparece `Mensaje faltante: mail-received` al primer ingreso.
-- El rango del hover y del menú se obtiene del grupo directo de LuckPerms con mayor peso.
-- Los nombres visuales de grupos pueden personalizarse en `interactive-chat.profile.group-display-names`.
-
-## MDVSocial 1.5.0
-
-- Nombre interactivo en el chat usando Paper Adventure.
-- Hover configurable con nivel, raza, rango, título y clan.
-- Clic normal sobre el nombre abre `Menus/jugador_opciones.yml`.
-- Shift + clic sobre el nombre inserta `/msg <jugador> `.
-- Menú general de jugador separado de `amigo_opciones.yml`.
-- Solicitudes de amistad mediante la API real de MMOCore.
-- Acciones para clan, carta, Grupo de Aventura y TPA.
-- Clic derecho configurable en botones mediante `right-action`.
-- Nuevos placeholders de menú: `{target_level}`, `{target_class}`, `{target_rank}`, `{target_title}` y `{target_clan}`.
-- Los títulos con `hidden: true` no aparecen en títulos bloqueados, pero siguen siendo equipables por quien tenga permiso.
-
-## MDVSocial 1.4.1
-
-- Menú central configurable `/mdvadmin` (alias `/ma`) desde `Menus/admin.yml`.
-- Biblioteca segura `/mdvitems` para obtener copias base de MMOItems por categoría, sin acceso al editor oficial.
-- Permisos por menú y por botón en los menús modulares.
-
-## MDVSocial 1.4.0
-
-- Hogares excedentes suspendidos sin eliminar datos de EssentialsX.
-- Bloqueo directo de `/home`, `/ehome` y variantes `essentials:` para casas suspendidas.
-- Campañas de correo global listables y eliminables por ID.
-- Correo automático de bienvenida para jugadores nuevos.
-- Restablecimiento automático a `aventurero` cuando un título deja de estar desbloqueado.
-- Títulos obligatorios de castigo administrados por staff.
-- Posición de rangos configurable con `page` y `slot`.
-- Retirada la reparación de AnimatedScoreboard de 1.3.3.
-
-Comandos administrativos nuevos:
-
-- `/mdvsocial mail list [página]`
-- `/mdvsocial mail view <id>`
-- `/mdvsocial mail delete <id>`
-- `/mdvsocial mail welcome-test <jugador>`
-- `/mdvsocial title punish <jugador> [título]`
-- `/mdvsocial title unpunish <jugador>`
-- `/mdvsocial homes status <jugador>`
-- `/mdvsocial homes restore <jugador>`
+1.6.5 hardens direct observation and moderation: held-item/armor/location context is target-aware and query-specific, personality gains a capability framing note without overwriting the main prompt, and moderation can deterministically queue/execute mute policy actions once configurable directed-abuse strikes reach the threshold.
 
 
-## Incluye
+## 1.6.5 reliability + modular integrations
 
-- Menús modulares en `plugins/MDVSocial/Menus/`.
-- Títulos cosméticos y rangos visuales.
-- Placeholders de título para PlaceholderAPI, incluyendo títulos de otros jugadores.
-- Placeholders inteligentes de party para scoreboard.
-- Puentes para GUIs externas.
-- Menú configurable de opciones de amigo desde la lista de MMOCore.
-- Sistema base de cartas/correo interno.
-- Responder cartas directamente desde la lectura.
-- Las cartas oficiales de MDVCRAFT no pueden bloquearse.
+ServerAssistant now keeps configuration in four focused files:
 
-## Placeholders de título
+```text
+plugins/ServerAssistant/
+├── config.yml        # runtime, providers, scenes, tools, moderation, chat output
+├── personality.yml   # Isolda character/tone prompt only
+├── wiki.yml          # local retrieval settings + wiki entries
+└── integrations.yml  # optional external plugin profile hooks
+```
 
-Del jugador que mira/evalúa el placeholder:
+`integrations.yml` is created automatically when upgrading. MMOCore and MDVSocial are independent soft integrations: they can be enabled/disabled without removing either plugin, and missing plugins are skipped safely. Profile context is local and read-only, so it does not add another AI request.
 
-- `%mdvsocial_title%`
-- `%mdvsocial_title_colored%`
-- `%mdvsocial_title_prefix%`
-- `%mdvsocial_title_prefix_plain%`
-- `%mdvsocial_active_title%`
-- `%mdvsocial_title_id%`
-- `%mdvsocial_unlocked_titles%`
+On startup and `/sva reload`, each file is compared with the bundled defaults. **Only missing schema/settings keys are added**; existing user values and personality text are preserved. `wiki.*` entries are treated as user content, so deleted/custom wiki pages are not silently resurrected or overwritten. This lets newer plugin versions introduce config options without making the admin manually copy them.
 
-De otro jugador por nombre:
+The first 1.6.2 -> 1.6.3 start automatically migrates `prompt:` to `personality.yml` and `advanced-context:` to `wiki.yml`, then removes those old sections from `config.yml`. Before that split migration, the plugin creates `plugins/ServerAssistant/backups/config-before-1.6.3.yml`.
 
-- `%mdvsocial_title_of_<jugador>%`
-- `%mdvsocial_title_colored_of_<jugador>%`
-- `%mdvsocial_title_prefix_of_<jugador>%`
-- `%mdvsocial_title_prefix_plain_of_<jugador>%`
-- `%mdvsocial_title_id_of_<jugador>%`
-- `%mdvsocial_active_title_of_<jugador>%`
+Automatic updating intentionally does not overwrite existing values when a future default changes. Any change that truly requires rewriting an old value should be handled by an explicit version migration in Java instead.
 
-También acepta UUID con `uuid_`:
 
-- `%mdvsocial_title_colored_of_uuid_<uuid>%`
+## 1.6.x action-tool reliability
 
-Ejemplo para menús que primero reemplazan `{player}`:
+OpenAI primary requests use JSON-object response mode by default so a normal answer and ACTION calls remain in the same parseable `m`/`t` envelope. If Isolda says she performs a real server action, the matching action must be present in `t`; stage-direction roleplay is not a substitute for the tool. Lightning also accepts unique player-name prefixes, and inventory context now exposes the main-hand item plus a bounded amount of lore when relevant.
+
+## Global scene model
+
+1. `Iso` / `Isolda` (or an eligible per-player smart follow-up) opens one global scene.
+2. Java reads a short configurable lookback from local chat/event logs.
+3. Java listens for the configured capture window (default 2 seconds).
+4. A local involvement graph removes unrelated players/messages.
+5. The scene is capped after filtering (default 10 chat lines + 2 events).
+6. Wiki/player/inventory/profile context is selected locally before the model call.
+7. One normal model request is made and Isolda reacts to the scene as a whole.
+8. Optional action tool calls may be returned in that same model response and are allow-listed/executed by Java.
+
+There are no conversation slots, group routers or "assistant busy" replies. Ordinary chat and events only populate local logs and cost no API tokens until a scene is triggered.
+
+## Features merged from the alternate branch
+
+- `/sva trigger`
+- `/sva listener playerchat <always|mention|smart|disabled>` (`/sva listen` alias)
+- `/sva listener events <death|advancement|join|quit|kick|joinquit|all> <enabled|disabled>`
+- Optional idle scheduling after chat inactivity (`/sva listener idle <enabled|disabled>`), implemented in 1.6 and disabled by default because it consumes API requests.
+- Trusted server context with current time/date/online player names and server-derived admin markers.
+- Player Data context tool.
+- Inventory context tool.
+- Curated global Sound action tool.
+- Harmless Lightning action tool.
+- Mute action tool.
+- Schedule action tool (the alternate branch documented it as TODO; 1.6 implements it without a second AI call).
+- Wiki is stored in `wiki.yml`; 1.6.3 automatically migrates the old `advanced-context.wiki` / `tools.wiki.pages` layouts.
+
+## Optional MMOCore / MDVSocial profile integrations
+
+The `profile` context tool activates only for relevant questions such as race/class, RPG level, professions, attributes, stats, mana/stamina/points, or equipped title. MMOCore classes can be labeled as races with `mmocore.class-as-race: true`. MDVSocial equipped titles are read through its public API.
+
+```text
+/sva integrations
+/sva integrations set mmocore enabled
+/sva integrations set mmocore disabled
+/sva integrations set mdvsocial enabled
+/sva integrations set all disabled
+/sva tools run profile <player>
+```
+
+Profession/attribute/stat counts and individual sections are bounded/configurable in `integrations.yml`, so a large RPG profile cannot dump unlimited data into the prompt. Normal unrelated chat receives no profile block.
+
+## Tool architecture
+
+`CONTEXT` tools are resolved locally before the one model request:
+
+- `wiki`
+- `player-data`
+- `inventory`
+- `profile` (optional MMOCore/MDVSocial data)
+
+`ACTION` tools may be emitted in the same structured model response:
+
+- `sound <name>`
+- `lightning <player>`
+- `mute <player>`
+- `schedule <seconds> <chat message>`
+
+Tool activation modes:
+
+- `smart`: available automatically when relevant.
+- `ask`: model requests are placed in a real Java approval queue and **do not execute** until `/sva approve <id>`.
+- `never`: unavailable.
+
+The model never receives an arbitrary console-command tool. Only explicitly registered actions can execute.
+
+### Tool admin commands
+
+```text
+/sva tools list
+/sva tools pending
+/sva tools set <tool> <smart|ask|never>
+/sva tools run <tool> [args...]
+/sva approve <id>
+/sva deny <id>
+```
+
+`mute` defaults to `ask`, refuses OP/`sva.admin` targets unless explicitly allowed, and uses a configurable command template. In 1.6.5 the moderation policy can automatically act when directed-abuse strikes reach the configured threshold: `ask` queues a real approval, while `smart` executes the allow-listed mute immediately. Built-in Spanish profanity coverage is combined with custom `strike-terms`, and `/sva tools moderation` shows threshold/protection/pending state.
+
+## Per-player smart follow-up
+
+`global-conversation.smart-follow-up-ms` remains per player, never global. Only players whose direct/smart line survived the answered scene receive their own short continuation window. Context-only participants cannot wake Isolda without mentioning her.
+
+## Recent events
+
+Deaths/joins/quits/kicks/advancements remain **context only** and never create model calls themselves. 1.6 also has a small semantic recent-event memory so questions such as `Iso quien llegó?` can retrieve a trusted recent join even when it fell outside the normal scene lookback.
+
+## Optional idle scheduling
+
+The alternate branch contained configuration for an inactivity-triggered request but no working implementation. 1.6 implements it under:
 
 ```yaml
-- '&7Título: &r%mdvsocial_title_colored_of_{player}%'
+global-conversation:
+  idle-scheduling:
+    enabled: false
+    min-delay-ms: 30000
+    max-delay-ms: 120000
+    require-online-players: true
 ```
 
-## Placeholders de party para scoreboard
+After real player chat, a random timer is started/reset. If chat stays quiet, at most one autonomous idle scene can be sent. It is disabled by default because it intentionally adds API usage.
 
-Estos placeholders usan MMOCore si está activo. Si el jugador no está en party, las líneas visuales devuelven vacío para no mostrar la sección de grupo.
+This is separate from the `schedule` tool: `schedule` delays an already-generated Isolda line and therefore needs no future AI request.
 
-- `%mdvsocial_party_header%` → `Grupo: actual/max`
-- `%mdvsocial_party_member_1%`
-- `%mdvsocial_party_member_2%`
-- `%mdvsocial_party_member_3%`
-- `%mdvsocial_party_member_4%`
-- `%mdvsocial_party_member_5%`
-- `%mdvsocial_party_count%`
-- `%mdvsocial_party_max%`
-- `%mdvsocial_party_members%`
-- `%mdvsocial_party_in_group%`
-- `%mdvsocial_party_spacer%`
+## Build/versioning
 
-El máximo se lee desde:
+`pom.xml` is the single source of truth for the version. Maven filters it into `plugin.yml`, and GitHub Actions reads the same Maven coordinates to upload the correct JAR automatically.
 
-```yaml
-social-friend-options:
-  party:
-    max-members: 5
+To release 1.6.5, for example, change only:
+
+```xml
+<version>1.6.5</version>
 ```
 
-## Sistema de cartas
-
-Comandos:
-
-- `/correo` abre el menú de correo.
-- `/carta buzon` abre el buzón.
-- `/carta enviar <jugador> <mensaje>` envía una carta.
-- `/carta bloquear <jugador>` bloquea cartas de ese jugador.
-- `/carta desbloquear <jugador>` desbloquea cartas de ese jugador.
-- `/carta bloqueados` muestra bloqueados.
-- `/carta cancelar` cancela una escritura por chat.
-
-Acciones para menús modulares:
-
-- `OPEN_MAILBOX`
-- `START_MAIL_SEND`
-- `START_MAIL_SEND_TARGET`
-- `START_MAIL_BLOCK`
-- `START_MAIL_UNBLOCK`
-- `REPLY_MAIL`
-- `INVITE_PARTY_TARGET`
-
-Datos:
-
-- `player-data.yml` guarda títulos.
-- `mail-data.yml` guarda cartas y bloqueos.
-
-Las cartas expiran automáticamente según `mail.expire-after-days`.
-
-
-
-## MDVSocial 1.2.14
-
-Corrige el menú de casas personales:
-
-- `{home_display}` ahora se reemplaza correctamente.
-- `{x}`, `{y}`, `{z}` funcionan como ubicación actual del jugador.
-- Los botones de casas vacías usan `homes-menu.items.set.missing` cuando existe.
-- El menú acepta configs con `homes-menu.items.teleport` y también el formato antiguo `homes-menu.teleport`.
-- El filler del menú puede desactivarse para dejar slots vacíos.
-
-## MDVSocial 1.2.5
-
-Agrega sincronizacion automatica para AnimatedScoreboard cuando el jugador esta en party de MMOCore.
-
-- Al entrar al servidor: `animatedscoreboard.party = false` por seguridad.
-- Si el jugador esta en party: `animatedscoreboard.party = true`.
-- Si el jugador sale de party: `animatedscoreboard.party = false`.
-- La sincronizacion se revisa cada `scoreboard-party-permission.sync-interval-ticks` ticks.
-
-Bloque de config recomendado:
-
-```yaml
-scoreboard-party-permission:
-  enabled: true
-  permission: animatedscoreboard.party
-  reset-on-join: true
-  sync-interval-ticks: 20
-  debug: false
-```
-
-Config recomendada en AnimatedScoreboard:
-
-```yaml
-worlds:
-  global:
-  - mdvcraftparty
-  - defaultscoreboard
-
-  world:
-  - mdvcraftparty
-  - defaultscoreboard
-
-  world_the_end:
-  - mdvcraftparty
-  - defaultscoreboard
-
-  world_nether:
-  - mdvcraftparty
-  - defaultscoreboard
-
-permissions:
-  mdvcraftparty: animatedscoreboard.party
-```
-
-
-## MDVSocial 1.2.7
-
-Agrega integración directa con MDVClans como motor de clanes.
-
-Nuevas acciones de menús modulares:
-
-```yaml
-action: OPEN_CONDITIONAL_MENU
-condition-placeholder: '%mdvclans_is_in_clan%'
-condition-equals: 'true'
-true-menu: clan_con_clan
-false-menu: clan_sin_clan
-```
-
-```yaml
-action: MDVCLANS_OPEN
-clans-menu: miembros
-```
-
-`MDVCLANS_OPEN` ejecuta internamente `/clan abrir <menu>`, así MDVSocial puede tener menús bonitos y MDVClans conserva las UIs dinámicas.
-
-
-## Cambios 1.2.7
-
-- `Menus/clan_con_clan.yml`: el item Tablero de información muestra placeholders de MDVClans y ejecuta `/clan tablero ver` al hacer click.
-
-
-## MDVSocial 1.2.14
-
-Agrega MDVSocial como proveedor reutilizable de títulos para otros plugins.
-
-Nuevos placeholders target:
-
-- `%mdvsocial_title_of_<jugador>%`
-- `%mdvsocial_title_colored_of_<jugador>%`
-- `%mdvsocial_title_prefix_of_<jugador>%`
-- `%mdvsocial_title_prefix_plain_of_<jugador>%`
-- `%mdvsocial_title_id_of_<jugador>%`
-- `%mdvsocial_active_title_of_<jugador>%`
-
-Nueva API pública:
-
-```java
-MDVSocialAPI.getEquippedTitle(uuid);
-MDVSocialAPI.getEquippedTitleColored(uuid);
-MDVSocialAPI.getEquippedTitlePlain(uuid);
-MDVSocialAPI.getEquippedTitleId(uuid);
-MDVSocialAPI.getEquippedTitlePrefix(uuid, true);
-```
-
-Esto permite que MDVClans u otros plugins muestren el título equipado de jugadores distintos al jugador que está mirando el menú.
-
-## MDVSocial Core UI desde 1.3.0
-
-MDVSocial puede usarse como base visual para otros plugins propios de MDVCRAFT. La lógica específica debe quedarse en cada plugin, pero pueden reutilizarse sonidos, colores, inventarios y botones comunes mediante `MDVSocialAPI`.
-
-Ejemplo rápido:
-
-```java
-Inventory inv = MDVSocialAPI.createInventory("&8MDVRecetas", 54, true);
-inv.setItem(45, MDVSocialAPI.createPreviousPageButton());
-inv.setItem(49, MDVSocialAPI.createCloseButton());
-inv.setItem(53, MDVSocialAPI.createNextPageButton());
-player.openInventory(inv);
-MDVSocialAPI.playUISound(player, "open");
-```
-
-En el listener del plugin externo se puede leer la acción común:
-
-```java
-String action = MDVSocialAPI.getButtonAction(event.getCurrentItem());
-if (action.equals("CLOSE")) {
-    event.getWhoClicked().closeInventory();
-    MDVSocialAPI.playUISound((Player) event.getWhoClicked(), "close");
-}
-```
+The workflow automatically expects and uploads `target/ServerAssistant-1.6.5.jar`.
