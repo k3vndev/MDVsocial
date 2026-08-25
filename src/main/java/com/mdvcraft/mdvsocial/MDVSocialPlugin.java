@@ -169,7 +169,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         long cleanupMinutes = Math.max(5L, getConfig().getLong("mail.cleanup-interval-minutes", 30L));
         Bukkit.getScheduler().runTaskTimer(this, this::cleanupExpiredMail, 20L * 60L, cleanupMinutes * 60L * 20L);
 
-        long titleValidationTicks = Math.max(20L, getConfig().getLong("settings.active-title-validation.interval-ticks", 100L));
+        long titleValidationTicks = Math.max(20L,
+                getConfig().getLong("settings.active-title-validation.interval-ticks", 100L));
         Bukkit.getScheduler().runTaskTimer(this, this::validateAllOnlineTitles, 40L, titleValidationTicks);
 
         if (getConfig().getBoolean("scoreboard-party-permission.enabled", true)) {
@@ -206,7 +207,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         for (PermissionAttachment attachment : scoreboardPartyAttachments.values()) {
             try {
                 attachment.remove();
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
         }
         scoreboardPartyAttachments.clear();
         saveData();
@@ -224,7 +226,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         ensureDefaultMenus();
         loadCustomMenus();
         loadExternalGuiActions();
-        if (mmoItemsBrowserManager != null) mmoItemsBrowserManager.reload();
+        if (mmoItemsBrowserManager != null)
+            mmoItemsBrowserManager.reload();
     }
 
     private void loadData() {
@@ -243,7 +246,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void saveData() {
-        if (data == null || dataFile == null) return;
+        if (data == null || dataFile == null)
+            return;
         try {
             data.save(dataFile);
         } catch (IOException e) {
@@ -267,7 +271,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void saveMailData() {
-        if (mailData == null || mailFile == null) return;
+        if (mailData == null || mailFile == null)
+            return;
         try {
             mailData.save(mailFile);
         } catch (IOException e) {
@@ -278,10 +283,12 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private void loadTitles() {
         titles.clear();
         ConfigurationSection sec = getConfig().getConfigurationSection("titles");
-        if (sec == null) return;
+        if (sec == null)
+            return;
         for (String id : sec.getKeys(false)) {
             ConfigurationSection t = sec.getConfigurationSection(id);
-            if (t == null) continue;
+            if (t == null)
+                continue;
             String cleanId = normalize(id);
             TitleDef def = new TitleDef(
                     cleanId,
@@ -296,8 +303,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                     t.getBoolean("hidden", false),
                     t.getBoolean("player-equippable", !t.getBoolean("hidden", false)),
                     t.getBoolean("punishment", false),
-                    t.getStringList("lore")
-            );
+                    t.getStringList("lore"));
             titles.put(cleanId, def);
         }
     }
@@ -305,10 +311,12 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private void loadRanks() {
         ranks.clear();
         ConfigurationSection sec = getConfig().getConfigurationSection("ranks");
-        if (sec == null) return;
+        if (sec == null)
+            return;
         for (String id : sec.getKeys(false)) {
             ConfigurationSection r = sec.getConfigurationSection(id);
-            if (r == null) continue;
+            if (r == null)
+                continue;
             String cleanId = normalize(id);
             RankDef def = new RankDef(
                     cleanId,
@@ -317,8 +325,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                     r.getString("permission", ""),
                     Math.max(1, r.getInt("page", 1)),
                     r.getInt("slot", -1),
-                    r.getStringList("lore")
-            );
+                    r.getStringList("lore"));
             ranks.put(cleanId, def);
         }
     }
@@ -327,17 +334,21 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         listSlots.clear();
         List<Integer> configSlots = getConfig().getIntegerList("list-slots");
         if (configSlots.isEmpty()) {
-            listSlots.addAll(Arrays.asList(10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43));
+            listSlots.addAll(Arrays.asList(10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32,
+                    33, 34, 37, 38, 39, 40, 41, 42, 43));
         } else {
             listSlots.addAll(configSlots);
         }
     }
 
     private boolean setupEconomy() {
-        if (!getConfig().getBoolean("settings.use-vault-economy", true)) return false;
-        if (!Bukkit.getPluginManager().isPluginEnabled("Vault")) return false;
+        if (!getConfig().getBoolean("settings.use-vault-economy", true))
+            return false;
+        if (!Bukkit.getPluginManager().isPluginEnabled("Vault"))
+            return false;
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) return false;
+        if (rsp == null)
+            return false;
         economy = rsp.getProvider();
         return economy != null;
     }
@@ -416,7 +427,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
 
     void openAdminMenu(Player player) {
         String menu = normalize(getConfig().getString("admin-menu.menu", "admin"));
-        if (menu.isBlank()) menu = "admin";
+        if (menu.isBlank())
+            menu = "admin";
         if (!getConfig().getBoolean("admin-menu.enabled", true)) {
             player.sendMessage(color(getPrefix() + "&cEl menú administrativo está desactivado."));
             return;
@@ -493,7 +505,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
 
         if (!sub.equals("title")) {
-            sender.sendMessage(color("&cUso: /mdvsocial reload | /mdvsocial open <jugador> <menu> [pagina] | /mdvsocial title ... | /mdvsocial mail ... | /mdvsocial homes ..."));
+            sender.sendMessage(color(
+                    "&cUso: /mdvsocial reload | /mdvsocial open <jugador> <menu> [pagina] | /mdvsocial title ... | /mdvsocial mail ... | /mdvsocial homes ..."));
             return true;
         }
 
@@ -512,8 +525,11 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 return true;
             }
             applyPunishmentTitle(target, titleId);
-            msg(sender, "punishment-applied", Map.of("player", target.getName() == null ? args[2] : target.getName(), "title", color(titles.get(titleId).display)));
-            if (target.isOnline()) msg(target.getPlayer(), "punishment-applied-target", Map.of("title", color(titles.get(titleId).display)));
+            msg(sender, "punishment-applied", Map.of("player", target.getName() == null ? args[2] : target.getName(),
+                    "title", color(titles.get(titleId).display)));
+            if (target.isOnline())
+                msg(target.getPlayer(), "punishment-applied-target",
+                        Map.of("title", color(titles.get(titleId).display)));
             return true;
         }
 
@@ -529,7 +545,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             }
             removePunishmentTitle(target);
             msg(sender, "punishment-removed", Map.of("player", target.getName() == null ? args[2] : target.getName()));
-            if (target.isOnline()) msg(target.getPlayer(), "punishment-removed-target");
+            if (target.isOnline())
+                msg(target.getPlayer(), "punishment-removed-target");
             return true;
         }
 
@@ -550,7 +567,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             }
             giveTitle(target.getUniqueId(), target.getName(), titleId);
             msg(sender, "given-title");
-            if (target.isOnline()) msg(target.getPlayer(), "given-title");
+            if (target.isOnline())
+                msg(target.getPlayer(), "given-title");
             return true;
         }
 
@@ -572,7 +590,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             giveTitle(target.getUniqueId(), target.getName(), titleId);
             setActiveTitle(target.getUniqueId(), titleId);
             saveData();
-            if (target.isOnline()) runEquipCommands(target.getPlayer(), titleId);
+            if (target.isOnline())
+                runEquipCommands(target.getPlayer(), titleId);
             msg(sender, "given-title");
             return true;
         }
@@ -581,7 +600,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
             setActiveTitle(target.getUniqueId(), getClearTargetTitleId());
             saveData();
-            if (target.isOnline()) runClearCommands(target.getPlayer());
+            if (target.isOnline())
+                runClearCommands(target.getPlayer());
             msg(sender, isMandatoryTitle() ? "title-reset-default" : "removed-title");
             return true;
         }
@@ -609,7 +629,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             double z = parseDouble(args[5], Double.NaN);
             double radius = parseDouble(args[6], -1);
             String titleId = normalize(args[7]);
-            if (world == null || Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z) || radius <= 0 || !titles.containsKey(titleId)) {
+            if (world == null || Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z) || radius <= 0
+                    || !titles.containsKey(titleId)) {
                 sendTitleHelp(sender);
                 return true;
             }
@@ -621,7 +642,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         sendTitleHelp(sender);
         return true;
     }
-
 
     private boolean handleAdminHomesCommand(CommandSender sender, String[] args) {
         if (playerHomesMenuManager == null || args.length < 3) {
@@ -638,13 +658,15 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             List<String> locked = playerHomesMenuManager.getLockedHomeNames(target);
             sender.sendMessage(color("&6Hogares de &e" + target.getName()));
             sender.sendMessage(color("&7Límite actual: &e" + playerHomesMenuManager.getCurrentLimit(target)));
-            sender.sendMessage(color("&7Suspendidos: " + (locked.isEmpty() ? "&aNinguno" : "&c" + String.join("&7, &c", locked))));
+            sender.sendMessage(
+                    color("&7Suspendidos: " + (locked.isEmpty() ? "&aNinguno" : "&c" + String.join("&7, &c", locked))));
             return true;
         }
         if (action.equals("restore") || action.equals("restaurar") || action.equals("unlock")) {
             OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
             int removed = playerHomesMenuManager.restorePersistentLocks(target.getUniqueId());
-            sender.sendMessage(color("&aSe limpiaron &e" + removed + " &abloqueos persistentes de &e" + (target.getName() == null ? args[2] : target.getName()) + "&a."));
+            sender.sendMessage(color("&aSe limpiaron &e" + removed + " &abloqueos persistentes de &e"
+                    + (target.getName() == null ? args[2] : target.getName()) + "&a."));
             return true;
         }
         sendAdminHomesHelp(sender);
@@ -654,9 +676,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private void sendAdminHomesHelp(CommandSender sender) {
         sender.sendMessage(color("&6MDVSocial homes:"));
         sender.sendMessage(color("&e/mdvsocial homes status <jugador> &7(muestra límite y hogares suspendidos)"));
-        sender.sendMessage(color("&e/mdvsocial homes restore <jugador> &7(limpia bloqueos persistentes cuando restore-on-upgrade es false)"));
+        sender.sendMessage(color(
+                "&e/mdvsocial homes restore <jugador> &7(limpia bloqueos persistentes cuando restore-on-upgrade es false)"));
     }
-
 
     private boolean handleAdminMailCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
@@ -832,791 +854,789 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
 
     private String defaultMainMenuYaml() {
         return """
-# ==========================================================
-# MDVSocial - Menu modular principal
-# Acciones disponibles:
-# OPEN_MENU / OPEN_CONDITIONAL_MENU / MDVCLANS_OPEN / COMMAND_PLAYER / BACK / CLOSE / PREVIOUS_PAGE / NEXT_PAGE / OPEN_TITLES
-# ==========================================================
-title: '&8MDVSocial'
-size: 27
-items:
-  titulos:
-    slot: 11
-    material: NAME_TAG
-    name: '&eTitulos y rangos'
-    lore:
-      - '&7Compra, equipa o revisa titulos.'
-      - '&eClick para abrir.'
-    action: OPEN_TITLES
+                # ==========================================================
+                # MDVSocial - Menu modular principal
+                # Acciones disponibles:
+                # OPEN_MENU / OPEN_CONDITIONAL_MENU / MDVCLANS_OPEN / COMMAND_PLAYER / BACK / CLOSE / PREVIOUS_PAGE / NEXT_PAGE / OPEN_TITLES
+                # ==========================================================
+                title: '&8MDVSocial'
+                size: 27
+                items:
+                  titulos:
+                    slot: 11
+                    material: NAME_TAG
+                    name: '&eTitulos y rangos'
+                    lore:
+                      - '&7Compra, equipa o revisa titulos.'
+                      - '&eClick para abrir.'
+                    action: OPEN_TITLES
 
-  clan:
-    slot: 13
-    material: SHIELD
-    name: '&aClan'
-    lore:
-      - '&7Abre el menu de clan.'
-      - '&8Detecta si tienes clan o no.'
-      - '&eClick para abrir.'
-    action: OPEN_CONDITIONAL_MENU
-    condition-placeholder: '%mdvclans_is_in_clan%'
-    condition-equals: 'true'
-    true-menu: clan_con_clan
-    false-menu: clan_sin_clan
+                  clan:
+                    slot: 13
+                    material: SHIELD
+                    name: '&aClan'
+                    lore:
+                      - '&7Abre el menu de clan.'
+                      - '&8Detecta si tienes clan o no.'
+                      - '&eClick para abrir.'
+                    action: OPEN_CONDITIONAL_MENU
+                    condition-placeholder: '%mdvclans_is_in_clan%'
+                    condition-equals: 'true'
+                    true-menu: clan_con_clan
+                    false-menu: clan_sin_clan
 
-  ayuda:
-    slot: 15
-    material: BOOK
-    name: '&bAyuda social'
-    lore:
-      - '&7Comandos sociales utiles.'
-      - '&eClick para abrir.'
-    action: OPEN_MENU
-    target-menu: ayuda
+                  ayuda:
+                    slot: 15
+                    material: BOOK
+                    name: '&bAyuda social'
+                    lore:
+                      - '&7Comandos sociales utiles.'
+                      - '&eClick para abrir.'
+                    action: OPEN_MENU
+                    target-menu: ayuda
 
-  cerrar:
-    slot: 26
-    material: BARRIER
-    name: '&cCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 26
+                    material: BARRIER
+                    name: '&cCerrar'
+                    action: CLOSE
+                """;
     }
 
     private String defaultClanMenuYaml() {
         return """
-title: '&8Clan'
-size: 27
-items:
-  detectar:
-    slot: 13
-    material: SHIELD
-    name: '&a&lClanes'
-    lore:
-      - ''
-      - '&7Este menu puente detecta'
-      - '&7si tienes clan o no.'
-      - ''
-      - '&eClick para continuar.'
-    action: OPEN_CONDITIONAL_MENU
-    condition-placeholder: '%mdvclans_is_in_clan%'
-    condition-equals: 'true'
-    true-menu: clan_con_clan
-    false-menu: clan_sin_clan
+                title: '&8Clan'
+                size: 27
+                items:
+                  detectar:
+                    slot: 13
+                    material: SHIELD
+                    name: '&a&lClanes'
+                    lore:
+                      - ''
+                      - '&7Este menu puente detecta'
+                      - '&7si tienes clan o no.'
+                      - ''
+                      - '&eClick para continuar.'
+                    action: OPEN_CONDITIONAL_MENU
+                    condition-placeholder: '%mdvclans_is_in_clan%'
+                    condition-equals: 'true'
+                    true-menu: clan_con_clan
+                    false-menu: clan_sin_clan
 
-  volver:
-    slot: 22
-    material: ARROW
-    name: '&eVolver'
-    action: BACK
+                  volver:
+                    slot: 22
+                    material: ARROW
+                    name: '&eVolver'
+                    action: BACK
 
-  cerrar:
-    slot: 26
-    material: BARRIER
-    name: '&cCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 26
+                    material: BARRIER
+                    name: '&cCerrar'
+                    action: CLOSE
+                """;
     }
 
     private String defaultClanConClanMenuYaml() {
         return """
-title: '&8&lClan'
-size: 27
-items:
-  gestion:
-    slot: 10
-    material: SHIELD
-    name: '&a&lGestion del clan'
-    lore:
-      - ''
-      - '&7Abre la interfaz dinamica'
-      - '&7principal de tu clan.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: gestion
+                title: '&8&lClan'
+                size: 27
+                items:
+                  gestion:
+                    slot: 10
+                    material: SHIELD
+                    name: '&a&lGestion del clan'
+                    lore:
+                      - ''
+                      - '&7Abre la interfaz dinamica'
+                      - '&7principal de tu clan.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: gestion
 
-  miembros:
-    slot: 11
-    material: PLAYER_HEAD
-    head-owner: '{player}'
-    name: '&b&lMiembros'
-    lore:
-      - ''
-      - '&7Lista dinamica con cabezas,'
-      - '&7rangos y opciones por permiso.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: miembros
+                  miembros:
+                    slot: 11
+                    material: PLAYER_HEAD
+                    head-owner: '{player}'
+                    name: '&b&lMiembros'
+                    lore:
+                      - ''
+                      - '&7Lista dinamica con cabezas,'
+                      - '&7rangos y opciones por permiso.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: miembros
 
-  info:
-    slot: 12
-    material: WRITABLE_BOOK
-    name: '&e&lTablero e informacion'
-    lore:
-      - ''
-      - '&7Banner, tablero, buzon,'
-      - '&7solicitudes y logs.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: info
+                  info:
+                    slot: 12
+                    material: WRITABLE_BOOK
+                    name: '&e&lTablero e informacion'
+                    lore:
+                      - ''
+                      - '&7Banner, tablero, buzon,'
+                      - '&7solicitudes y logs.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: info
 
-  relaciones:
-    slot: 13
-    material: MAP
-    name: '&9&lRelaciones'
-    lore:
-      - ''
-      - '&7Aliados, enemigos,'
-      - '&7bajas y ranking.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: relaciones
+                  relaciones:
+                    slot: 13
+                    material: MAP
+                    name: '&9&lRelaciones'
+                    lore:
+                      - ''
+                      - '&7Aliados, enemigos,'
+                      - '&7bajas y ranking.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: relaciones
 
-  recursos:
-    slot: 14
-    material: CHEST
-    name: '&6&lBanco y almacen'
-    lore:
-      - ''
-      - '&7Accede al banco y al'
-      - '&7almacen del clan.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: almacen
+                  recursos:
+                    slot: 14
+                    material: CHEST
+                    name: '&6&lBanco y almacen'
+                    lore:
+                      - ''
+                      - '&7Accede al banco y al'
+                      - '&7almacen del clan.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: almacen
 
-  lista:
-    slot: 15
-    material: WHITE_BANNER
-    name: '&f&lLista de clanes'
-    lore:
-      - ''
-      - '&7Explora otros clanes'
-      - '&7de MDVCRAFT.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: lista
+                  lista:
+                    slot: 15
+                    material: WHITE_BANNER
+                    name: '&f&lLista de clanes'
+                    lore:
+                      - ''
+                      - '&7Explora otros clanes'
+                      - '&7de MDVCRAFT.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: lista
 
-  ajustes:
-    slot: 16
-    material: REDSTONE_TORCH
-    name: '&c&lAjustes del clan'
-    lore:
-      - ''
-      - '&7Opciones de administracion'
-      - '&7para rangos altos.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: ajustes
+                  ajustes:
+                    slot: 16
+                    material: REDSTONE_TORCH
+                    name: '&c&lAjustes del clan'
+                    lore:
+                      - ''
+                      - '&7Opciones de administracion'
+                      - '&7para rangos altos.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: ajustes
 
-  base:
-    slot: 22
-    material: ENDER_PEARL
-    name: '&b&lIr a la base'
-    lore:
-      - ''
-      - '&7Teletranspórtate a la base'
-      - '&7definida por el clan.'
-      - ''
-      - '&eClick para viajar.'
-    action: COMMAND_PLAYER
-    commands:
-      - 'clan base'
+                  base:
+                    slot: 22
+                    material: ENDER_PEARL
+                    name: '&b&lIr a la base'
+                    lore:
+                      - ''
+                      - '&7Teletranspórtate a la base'
+                      - '&7definida por el clan.'
+                      - ''
+                      - '&eClick para viajar.'
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'clan base'
 
-  volver:
-    slot: 18
-    material: ARROW
-    name: '&6&lVolver'
-    action: BACK
+                  volver:
+                    slot: 18
+                    material: ARROW
+                    name: '&6&lVolver'
+                    action: BACK
 
-  cerrar:
-    slot: 26
-    material: BARRIER
-    name: '&c&lCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 26
+                    material: BARRIER
+                    name: '&c&lCerrar'
+                    action: CLOSE
+                """;
     }
 
     private String defaultClanSinClanMenuYaml() {
         return """
-title: '&8&lClanes'
-size: 27
-items:
-  lista:
-    slot: 11
-    material: WHITE_BANNER
-    name: '&f&lLista de clanes'
-    lore:
-      - ''
-      - '&7Mira los clanes existentes.'
-      - '&7Si uno esta abierto, puedes unirte.'
-      - '&7Si esta cerrado, puedes solicitar ingreso.'
-      - ''
-      - '&eClick para abrir.'
-    action: MDVCLANS_OPEN
-    clans-menu: lista_sinclan
+                title: '&8&lClanes'
+                size: 27
+                items:
+                  lista:
+                    slot: 11
+                    material: WHITE_BANNER
+                    name: '&f&lLista de clanes'
+                    lore:
+                      - ''
+                      - '&7Mira los clanes existentes.'
+                      - '&7Si uno esta abierto, puedes unirte.'
+                      - '&7Si esta cerrado, puedes solicitar ingreso.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: MDVCLANS_OPEN
+                    clans-menu: lista_sinclan
 
-  crear:
-    slot: 15
-    material: EMERALD
-    name: '&a&lCrear clan'
-    lore:
-      - ''
-      - '&7Inicia la creacion de un clan.'
-      - '&7El chat te pedira ID y nombre.'
-      - ''
-      - '&eClick para comenzar.'
-    action: COMMAND_PLAYER
-    commands:
-      - 'clan crear'
+                  crear:
+                    slot: 15
+                    material: EMERALD
+                    name: '&a&lCrear clan'
+                    lore:
+                      - ''
+                      - '&7Inicia la creacion de un clan.'
+                      - '&7El chat te pedira ID y nombre.'
+                      - ''
+                      - '&eClick para comenzar.'
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'clan crear'
 
-  volver:
-    slot: 22
-    material: ARROW
-    name: '&6&lVolver'
-    action: BACK
+                  volver:
+                    slot: 22
+                    material: ARROW
+                    name: '&6&lVolver'
+                    action: BACK
 
-  cerrar:
-    slot: 26
-    material: BARRIER
-    name: '&c&lCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 26
+                    material: BARRIER
+                    name: '&c&lCerrar'
+                    action: CLOSE
+                """;
     }
 
     private String defaultAyudaMenuYaml() {
         return """
-title: '&8Ayuda social'
-size: 27
-items:
-  amigos:
-    slot: 10
-    material: PLAYER_HEAD
-    head-owner: '{player}'
-    name: '&bAmigos'
-    lore:
-      - '&7Ejecuta /friends como jugador.'
-    action: COMMAND_PLAYER
-    commands:
-      - 'friends'
+                title: '&8Ayuda social'
+                size: 27
+                items:
+                  amigos:
+                    slot: 10
+                    material: PLAYER_HEAD
+                    head-owner: '{player}'
+                    name: '&bAmigos'
+                    lore:
+                      - '&7Ejecuta /friends como jugador.'
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'friends'
 
-  correo:
-    slot: 12
-    material: WRITABLE_BOOK
-    name: '&eCorreo'
-    lore:
-      - '&7Ejecuta /mail read como jugador.'
-    action: COMMAND_PLAYER
-    commands:
-      - 'mail read'
+                  correo:
+                    slot: 12
+                    material: WRITABLE_BOOK
+                    name: '&eCorreo'
+                    lore:
+                      - '&7Ejecuta /mail read como jugador.'
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'mail read'
 
-  ejemplo_paginas:
-    slot: 14
-    material: MAP
-    name: '&dEjemplo de paginas'
-    lore:
-      - '&7Este mismo menu puede tener pages: 1, 2, 3...'
-      - '&7Usa NEXT_PAGE y PREVIOUS_PAGE.'
+                  ejemplo_paginas:
+                    slot: 14
+                    material: MAP
+                    name: '&dEjemplo de paginas'
+                    lore:
+                      - '&7Este mismo menu puede tener pages: 1, 2, 3...'
+                      - '&7Usa NEXT_PAGE y PREVIOUS_PAGE.'
 
-  volver:
-    slot: 18
-    material: ARROW
-    name: '&eVolver'
-    action: BACK
+                  volver:
+                    slot: 18
+                    material: ARROW
+                    name: '&eVolver'
+                    action: BACK
 
-  cerrar:
-    slot: 26
-    material: BARRIER
-    name: '&cCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 26
+                    material: BARRIER
+                    name: '&cCerrar'
+                    action: CLOSE
+                """;
     }
-
 
     private String defaultCorreoMenuYaml() {
         return """
-title: '&8&lCorreo'
-size: 27
-items:
-  buzon:
-    slot: 11
-    material: CHEST
-    name: '&6&lBuzon'
-    lore:
-      - ''
-      - '&7Revisa las cartas que'
-      - '&7otros jugadores te enviaron.'
-      - ''
-      - '&eClick para abrir.'
-    action: OPEN_MAILBOX
+                title: '&8&lCorreo'
+                size: 27
+                items:
+                  buzon:
+                    slot: 11
+                    material: CHEST
+                    name: '&6&lBuzon'
+                    lore:
+                      - ''
+                      - '&7Revisa las cartas que'
+                      - '&7otros jugadores te enviaron.'
+                      - ''
+                      - '&eClick para abrir.'
+                    action: OPEN_MAILBOX
 
-  enviar:
-    slot: 13
-    material: WRITABLE_BOOK
-    name: '&e&lEnviar carta'
-    lore:
-      - ''
-      - '&7Escribe una carta a otro'
-      - '&7jugador, incluso si no esta conectado.'
-      - ''
-      - '&eClick para comenzar.'
-    action: START_MAIL_SEND
-    close-on-click: true
+                  enviar:
+                    slot: 13
+                    material: WRITABLE_BOOK
+                    name: '&e&lEnviar carta'
+                    lore:
+                      - ''
+                      - '&7Escribe una carta a otro'
+                      - '&7jugador, incluso si no esta conectado.'
+                      - ''
+                      - '&eClick para comenzar.'
+                    action: START_MAIL_SEND
+                    close-on-click: true
 
-  bloquear:
-    slot: 15
-    material: RED_DYE
-    name: '&c&lBloquear cartas'
-    lore:
-      - ''
-      - '&7Bloquea a un jugador para'
-      - '&7que no pueda enviarte cartas.'
-      - ''
-      - '&eClick para escribir su nombre.'
-    action: START_MAIL_BLOCK
-    close-on-click: true
+                  bloquear:
+                    slot: 15
+                    material: RED_DYE
+                    name: '&c&lBloquear cartas'
+                    lore:
+                      - ''
+                      - '&7Bloquea a un jugador para'
+                      - '&7que no pueda enviarte cartas.'
+                      - ''
+                      - '&eClick para escribir su nombre.'
+                    action: START_MAIL_BLOCK
+                    close-on-click: true
 
-  desbloquear:
-    slot: 16
-    material: LIME_DYE
-    name: '&a&lDesbloquear jugador'
-    lore:
-      - ''
-      - '&7Permite que un jugador bloqueado'
-      - '&7vuelva a enviarte cartas.'
-      - ''
-      - '&eClick para escribir su nombre.'
-    action: START_MAIL_UNBLOCK
-    close-on-click: true
+                  desbloquear:
+                    slot: 16
+                    material: LIME_DYE
+                    name: '&a&lDesbloquear jugador'
+                    lore:
+                      - ''
+                      - '&7Permite que un jugador bloqueado'
+                      - '&7vuelva a enviarte cartas.'
+                      - ''
+                      - '&eClick para escribir su nombre.'
+                    action: START_MAIL_UNBLOCK
+                    close-on-click: true
 
-  volver:
-    slot: 22
-    material: PLAYER_HEAD
-    texture: 'eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmQ2OWUwNmU1ZGFkZmQ4NGU1ZjNkMWMyMTA2M2YyNTUzYjJmYTk0NWVlMWQ0ZDcxNTJmZGM1NDI1YmMxMmE5In19fQ=='
-    name: '&6&lVolver'
-    lore:
-      - '&7Regresa al menu social.'
-    action: OPEN_MENU
-    target-menu: menuamigos
-""";
+                  volver:
+                    slot: 22
+                    material: PLAYER_HEAD
+                    texture: 'eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmQ2OWUwNmU1ZGFkZmQ4NGU1ZjNkMWMyMTA2M2YyNTUzYjJmYTk0NWVlMWQ0ZDcxNTJmZGM1NDI1YmMxMmE5In19fQ=='
+                    name: '&6&lVolver'
+                    lore:
+                      - '&7Regresa al menu social.'
+                    action: OPEN_MENU
+                    target-menu: menuamigos
+                """;
     }
-
 
     private String defaultAmigoOpcionesMenuYaml() {
         return """
-title: '&8&lOpciones de {target}'
-size: 27
-items:
-  perfil:
-    slot: 10
-    material: PLAYER_HEAD
-    head-owner: '{target}'
-    name: '&e&l{target}'
-    lore:
-      - ''
-      - '&7Estado: {target_status}'
-      - '&7UUID: &8{target_uuid}'
-      - ''
-      - '&7Compañero registrado'
-      - '&7en tu libreta social.'
-      - ''
-      - '&8Usa las opciones cercanas'
-      - '&8para interactuar.'
+                title: '&8&lOpciones de {target}'
+                size: 27
+                items:
+                  perfil:
+                    slot: 10
+                    material: PLAYER_HEAD
+                    head-owner: '{target}'
+                    name: '&e&l{target}'
+                    lore:
+                      - ''
+                      - '&7Estado: {target_status}'
+                      - '&7UUID: &8{target_uuid}'
+                      - ''
+                      - '&7Compañero registrado'
+                      - '&7en tu libreta social.'
+                      - ''
+                      - '&8Usa las opciones cercanas'
+                      - '&8para interactuar.'
 
-  carta:
-    slot: 12
-    material: WRITABLE_BOOK
-    name: '&6&lEnviar carta'
-    lore:
-      - ''
-      - '&7Escribe una carta para &e{target}&7.'
-      - '&7No tendrás que volver a escribir su nombre.'
-      - ''
-      - '&eClick para escribir el mensaje.'
-    action: START_MAIL_SEND_TARGET
-    close-on-click: true
+                  carta:
+                    slot: 12
+                    material: WRITABLE_BOOK
+                    name: '&6&lEnviar carta'
+                    lore:
+                      - ''
+                      - '&7Escribe una carta para &e{target}&7.'
+                      - '&7No tendrás que volver a escribir su nombre.'
+                      - ''
+                      - '&eClick para escribir el mensaje.'
+                    action: START_MAIL_SEND_TARGET
+                    close-on-click: true
 
-  party:
-    slot: 14
-    material: TOTEM_OF_UNDYING
-    name: '&d&lInvitar al grupo'
-    lore:
-      - ''
-      - '&7Invita a &e{target} &7a tu'
-      - '&7Grupo de Aventura.'
-      - ''
-      - '&8Si no tienes party, el comportamiento'
-      - '&8se controla desde config.yml.'
-      - ''
-      - '&eClick para invitar.'
-    action: INVITE_PARTY_TARGET
-    visible-when: online
-    close-on-click: true
+                  party:
+                    slot: 14
+                    material: TOTEM_OF_UNDYING
+                    name: '&d&lInvitar al grupo'
+                    lore:
+                      - ''
+                      - '&7Invita a &e{target} &7a tu'
+                      - '&7Grupo de Aventura.'
+                      - ''
+                      - '&8Si no tienes party, el comportamiento'
+                      - '&8se controla desde config.yml.'
+                      - ''
+                      - '&eClick para invitar.'
+                    action: INVITE_PARTY_TARGET
+                    visible-when: online
+                    close-on-click: true
 
-  tpa:
-    slot: 16
-    material: ENDER_PEARL
-    name: '&a&lSolicitar viaje'
-    lore:
-      - ''
-      - '&7Envía una solicitud de TPA'
-      - '&7a &e{target}&7.'
-      - ''
-      - '&eClick para solicitar.'
-    action: COMMAND_PLAYER
-    visible-when: online
-    commands:
-      - 'tpa {target}'
+                  tpa:
+                    slot: 16
+                    material: ENDER_PEARL
+                    name: '&a&lSolicitar viaje'
+                    lore:
+                      - ''
+                      - '&7Envía una solicitud de TPA'
+                      - '&7a &e{target}&7.'
+                      - ''
+                      - '&eClick para solicitar.'
+                    action: COMMAND_PLAYER
+                    visible-when: online
+                    commands:
+                      - 'tpa {target}'
 
-  offline_info:
-    slot: 14
-    material: GRAY_DYE
-    name: '&8&lCompañero desconectado'
-    lore:
-      - ''
-      - '&7Este jugador no está conectado.'
-      - '&7Puedes enviarle una carta,'
-      - '&7pero no invitarlo a party ni TPA.'
-    visible-when: offline
+                  offline_info:
+                    slot: 14
+                    material: GRAY_DYE
+                    name: '&8&lCompañero desconectado'
+                    lore:
+                      - ''
+                      - '&7Este jugador no está conectado.'
+                      - '&7Puedes enviarle una carta,'
+                      - '&7pero no invitarlo a party ni TPA.'
+                    visible-when: offline
 
-  volver:
-    slot: 22
-    material: PLAYER_HEAD
-    texture: 'eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmQ2OWUwNmU1ZGFkZmQ4NGU1ZjNkMWMyMTA2M2YyNTUzYjJmYTk0NWVlMWQ0ZDcxNTJmZGM1NDI1YmMxMmE5In19fQ=='
-    name: '&6&lVolver'
-    lore:
-      - '&7Regresa al menú social.'
-    action: COMMAND_PLAYER
-    commands:
-      - 'friends'
-""";
+                  volver:
+                    slot: 22
+                    material: PLAYER_HEAD
+                    texture: 'eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmQ2OWUwNmU1ZGFkZmQ4NGU1ZjNkMWMyMTA2M2YyNTUzYjJmYTk0NWVlMWQ0ZDcxNTJmZGM1NDI1YmMxMmE5In19fQ=='
+                    name: '&6&lVolver'
+                    lore:
+                      - '&7Regresa al menú social.'
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'friends'
+                """;
     }
-
 
     private String defaultJugadorOpcionesMenuYaml() {
         return """
-# ==========================================================
-# MDVSocial - Opciones de cualquier jugador
-#
-# Se abre desde el nombre interactivo del chat:
-# /social jugador <nombre>
-# ==========================================================
-title: '&8&lOpciones de {target}'
-size: 27
+                # ==========================================================
+                # MDVSocial - Opciones de cualquier jugador
+                #
+                # Se abre desde el nombre interactivo del chat:
+                # /social jugador <nombre>
+                # ==========================================================
+                title: '&8&lOpciones de {target}'
+                size: 27
 
-items:
-  perfil:
-    slot: 4
-    material: PLAYER_HEAD
-    head-owner: '{target}'
-    name: '&e&lPerfil de {target}'
-    lore:
-      - ''
-      - '&e&l● &7&lInformación'
-      - '&7Estado: {target_status}'
-      - '&7Título: &r{target_title}'
-      - '&7Rango: &r{target_rank}'
-      - '&7Clan: &r{target_clan}'
-      - '&7Nivel: &e{target_level}'
-      - '&7Raza: &f{target_class}'
-      - ''
-      - '&bClick derecho &7para preparar'
-      - '&7un mensaje privado.'
-    right-action: SUGGEST_MSG_TARGET
-    close-on-click: true
+                items:
+                  perfil:
+                    slot: 4
+                    material: PLAYER_HEAD
+                    head-owner: '{target}'
+                    name: '&e&lPerfil de {target}'
+                    lore:
+                      - ''
+                      - '&e&l● &7&lInformación'
+                      - '&7Estado: {target_status}'
+                      - '&7Título: &r{target_title}'
+                      - '&7Rango: &r{target_rank}'
+                      - '&7Clan: &r{target_clan}'
+                      - '&7Nivel: &e{target_level}'
+                      - '&7Raza: &f{target_class}'
+                      - ''
+                      - '&bClick derecho &7para preparar'
+                      - '&7un mensaje privado.'
+                    right-action: SUGGEST_MSG_TARGET
+                    close-on-click: true
 
-  solicitud_amistad:
-    slot: 10
-    material: PLAYER_HEAD
-    head-owner: '{target}'
-    name: '&b&lEnviar solicitud de amistad'
-    lore:
-      - ''
-      - '&b&l● &7&lAmistad de MMOCore'
-      - '&7Envía una solicitud a'
-      - '&e{target}&7.'
-      - ''
-      - '&eClick para enviar.'
-    action: INVITE_FRIEND_TARGET
-    visible-when: online_not_friend
-    close-on-click: true
+                  solicitud_amistad:
+                    slot: 10
+                    material: PLAYER_HEAD
+                    head-owner: '{target}'
+                    name: '&b&lEnviar solicitud de amistad'
+                    lore:
+                      - ''
+                      - '&b&l● &7&lAmistad de MMOCore'
+                      - '&7Envía una solicitud a'
+                      - '&e{target}&7.'
+                      - ''
+                      - '&eClick para enviar.'
+                    action: INVITE_FRIEND_TARGET
+                    visible-when: online_not_friend
+                    close-on-click: true
 
-  amistad_existente:
-    slot: 10
-    material: LIME_DYE
-    name: '&a&lYa son amigos'
-    lore:
-      - ''
-      - '&7{target} ya forma parte'
-      - '&7de tu lista de amigos.'
-    visible-when: friend
+                  amistad_existente:
+                    slot: 10
+                    material: LIME_DYE
+                    name: '&a&lYa son amigos'
+                    lore:
+                      - ''
+                      - '&7{target} ya forma parte'
+                      - '&7de tu lista de amigos.'
+                    visible-when: friend
 
-  amistad_desconectada:
-    slot: 10
-    material: GRAY_DYE
-    name: '&8&lAmistad no disponible'
-    lore:
-      - ''
-      - '&7Las solicitudes de amistad'
-      - '&7requieren que ambos jugadores'
-      - '&7estén conectados.'
-    visible-when: offline_not_friend
+                  amistad_desconectada:
+                    slot: 10
+                    material: GRAY_DYE
+                    name: '&8&lAmistad no disponible'
+                    lore:
+                      - ''
+                      - '&7Las solicitudes de amistad'
+                      - '&7requieren que ambos jugadores'
+                      - '&7estén conectados.'
+                    visible-when: offline_not_friend
 
-  clan_invite:
-    slot: 11
-    material: PURPLE_BANNER
-    name: '&5&lInvitar al clan'
-    lore:
-      - ''
-      - '&5&l● &7&lInvitación de clan'
-      - '&7Envía una invitación a'
-      - '&e{target}&7.'
-      - ''
-      - '&8Puede funcionar aunque esté'
-      - '&8desconectado.'
-      - ''
-      - '&eClick para invitar.'
-    action: COMMAND_PLAYER
-    close-on-click: true
-    commands:
-      - 'clan invitar {target}'
+                  clan_invite:
+                    slot: 11
+                    material: PURPLE_BANNER
+                    name: '&5&lInvitar al clan'
+                    lore:
+                      - ''
+                      - '&5&l● &7&lInvitación de clan'
+                      - '&7Envía una invitación a'
+                      - '&e{target}&7.'
+                      - ''
+                      - '&8Puede funcionar aunque esté'
+                      - '&8desconectado.'
+                      - ''
+                      - '&eClick para invitar.'
+                    action: COMMAND_PLAYER
+                    close-on-click: true
+                    commands:
+                      - 'clan invitar {target}'
 
-  carta:
-    slot: 13
-    material: WRITABLE_BOOK
-    name: '&6&lEnviar carta'
-    lore:
-      - ''
-      - '&6&l● &7&lCorrespondencia'
-      - '&7Escribe una carta para'
-      - '&e{target}&7.'
-      - ''
-      - '&eClick para escribir.'
-    action: START_MAIL_SEND_TARGET
-    close-on-click: true
+                  carta:
+                    slot: 13
+                    material: WRITABLE_BOOK
+                    name: '&6&lEnviar carta'
+                    lore:
+                      - ''
+                      - '&6&l● &7&lCorrespondencia'
+                      - '&7Escribe una carta para'
+                      - '&e{target}&7.'
+                      - ''
+                      - '&eClick para escribir.'
+                    action: START_MAIL_SEND_TARGET
+                    close-on-click: true
 
-  party:
-    slot: 15
-    material: TOTEM_OF_UNDYING
-    name: '&d&lInvitar al grupo'
-    lore:
-      - ''
-      - '&d&l● &7&lGrupo de Aventura'
-      - '&7Invita a &e{target} &7a tu'
-      - '&7party temporal.'
-      - ''
-      - '&7Si no tienes party,'
-      - '&7se creará automáticamente.'
-      - ''
-      - '&eClick para invitar.'
-    action: INVITE_PARTY_TARGET
-    visible-when: online_not_self
-    close-on-click: true
+                  party:
+                    slot: 15
+                    material: TOTEM_OF_UNDYING
+                    name: '&d&lInvitar al grupo'
+                    lore:
+                      - ''
+                      - '&d&l● &7&lGrupo de Aventura'
+                      - '&7Invita a &e{target} &7a tu'
+                      - '&7party temporal.'
+                      - ''
+                      - '&7Si no tienes party,'
+                      - '&7se creará automáticamente.'
+                      - ''
+                      - '&eClick para invitar.'
+                    action: INVITE_PARTY_TARGET
+                    visible-when: online_not_self
+                    close-on-click: true
 
-  party_offline:
-    slot: 15
-    material: GRAY_DYE
-    name: '&8&lGrupo no disponible'
-    lore:
-      - ''
-      - '&7El jugador debe estar'
-      - '&7conectado para recibir'
-      - '&7una invitación de grupo.'
-    visible-when: offline
+                  party_offline:
+                    slot: 15
+                    material: GRAY_DYE
+                    name: '&8&lGrupo no disponible'
+                    lore:
+                      - ''
+                      - '&7El jugador debe estar'
+                      - '&7conectado para recibir'
+                      - '&7una invitación de grupo.'
+                    visible-when: offline
 
-  tpa:
-    slot: 16
-    material: ENDER_PEARL
-    name: '&a&lSolicitar viaje'
-    lore:
-      - ''
-      - '&a&l● &7&lTeletransporte'
-      - '&7Envía una solicitud de TPA'
-      - '&7a &e{target}&7.'
-      - ''
-      - '&eClick para solicitar.'
-    action: COMMAND_PLAYER
-    visible-when: online_not_self
-    commands:
-      - 'tpa {target}'
+                  tpa:
+                    slot: 16
+                    material: ENDER_PEARL
+                    name: '&a&lSolicitar viaje'
+                    lore:
+                      - ''
+                      - '&a&l● &7&lTeletransporte'
+                      - '&7Envía una solicitud de TPA'
+                      - '&7a &e{target}&7.'
+                      - ''
+                      - '&eClick para solicitar.'
+                    action: COMMAND_PLAYER
+                    visible-when: online_not_self
+                    commands:
+                      - 'tpa {target}'
 
-  tpa_offline:
-    slot: 16
-    material: GRAY_DYE
-    name: '&8&lViaje no disponible'
-    lore:
-      - ''
-      - '&7El jugador no está'
-      - '&7conectado actualmente.'
-    visible-when: offline
+                  tpa_offline:
+                    slot: 16
+                    material: GRAY_DYE
+                    name: '&8&lViaje no disponible'
+                    lore:
+                      - ''
+                      - '&7El jugador no está'
+                      - '&7conectado actualmente.'
+                    visible-when: offline
 
-  cerrar:
-    slot: 22
-    material: BARRIER
-    name: '&c&lCerrar'
-    lore:
-      - ''
-      - '&7Cierra este menú.'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 22
+                    material: BARRIER
+                    name: '&c&lCerrar'
+                    lore:
+                      - ''
+                      - '&7Cierra este menú.'
+                    action: CLOSE
+                """;
     }
-
 
     private String defaultAdminMenuYaml() {
         return """
-# ==========================================================
-# MDVSocial - Menú administrativo completamente configurable
-#
-# Cada botón puede usar:
-#   permission: permiso.necesario
-#   hide-without-permission: true/false
-#   action: COMMAND_PLAYER | OPEN_MENU | OPEN_MMOITEMS_BROWSER | CLOSE
-#   commands: lista de comandos ejecutados COMO EL JUGADOR
-# ==========================================================
-permission: mdvsocial.admin-menu
-title: '&8&lAdministración de MDVCRAFT'
-size: 54
-items:
-  misiones:
-    slot: 11
-    material: WRITABLE_BOOK
-    name: '&6&lMisiones'
-    lore:
-      - ''
-      - '&7Abre el catálogo y editor visual'
-      - '&7de misiones de MDVQuest.'
-      - ''
-      - '&8Comando: /mdvquest admin'
-      - '&eClic para abrir.'
-    permission: mdvquest.editor
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands:
-      - 'mdvquest admin'
+                # ==========================================================
+                # MDVSocial - Menú administrativo completamente configurable
+                #
+                # Cada botón puede usar:
+                #   permission: permiso.necesario
+                #   hide-without-permission: true/false
+                #   action: COMMAND_PLAYER | OPEN_MENU | OPEN_MMOITEMS_BROWSER | CLOSE
+                #   commands: lista de comandos ejecutados COMO EL JUGADOR
+                # ==========================================================
+                permission: mdvsocial.admin-menu
+                title: '&8&lAdministración de MDVCRAFT'
+                size: 54
+                items:
+                  misiones:
+                    slot: 11
+                    material: WRITABLE_BOOK
+                    name: '&6&lMisiones'
+                    lore:
+                      - ''
+                      - '&7Abre el catálogo y editor visual'
+                      - '&7de misiones de MDVQuest.'
+                      - ''
+                      - '&8Comando: /mdvquest admin'
+                      - '&eClic para abrir.'
+                    permission: mdvquest.editor
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'mdvquest admin'
 
-  recetas:
-    slot: 13
-    material: CRAFTING_TABLE
-    name: '&6&lCrear recetas'
-    lore:
-      - ''
-      - '&7Abre solamente el creador de recetas.'
-      - '&7No permite editar recetas existentes.'
-      - ''
-      - '&8Comando: /mdvrecetas editor'
-      - '&eClic para abrir.'
-    permission: mdvrecetas.editor
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands:
-      - 'mdvrecetas editor'
+                  recetas:
+                    slot: 13
+                    material: CRAFTING_TABLE
+                    name: '&6&lCrear recetas'
+                    lore:
+                      - ''
+                      - '&7Abre solamente el creador de recetas.'
+                      - '&7No permite editar recetas existentes.'
+                      - ''
+                      - '&8Comando: /mdvrecetas editor'
+                      - '&eClic para abrir.'
+                    permission: mdvrecetas.editor
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands:
+                      - 'mdvrecetas editor'
 
-  objetos:
-    slot: 15
-    material: CHEST
-    name: '&6&lBiblioteca de MMOItems'
-    lore:
-      - ''
-      - '&7Explora los objetos por categoría'
-      - '&7y obtiene copias base para pruebas.'
-      - ''
-      - '&cNo permite crear, editar ni eliminar.'
-      - '&eClic para abrir.'
-    permission: mdvsocial.item-browser
-    hide-without-permission: true
-    action: OPEN_MMOITEMS_BROWSER
+                  objetos:
+                    slot: 15
+                    material: CHEST
+                    name: '&6&lBiblioteca de MMOItems'
+                    lore:
+                      - ''
+                      - '&7Explora los objetos por categoría'
+                      - '&7y obtiene copias base para pruebas.'
+                      - ''
+                      - '&cNo permite crear, editar ni eliminar.'
+                      - '&eClic para abrir.'
+                    permission: mdvsocial.item-browser
+                    hide-without-permission: true
+                    action: OPEN_MMOITEMS_BROWSER
 
-  creativo:
-    slot: 29
-    material: GRASS_BLOCK
-    name: '&aModo creativo'
-    lore:
-      - '&8Comando: /gmc'
-      - ''
-      - '&eClic para cambiar.'
-    permission: essentials.gamemode.creative
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands: ['gmc']
+                  creativo:
+                    slot: 29
+                    material: GRASS_BLOCK
+                    name: '&aModo creativo'
+                    lore:
+                      - '&8Comando: /gmc'
+                      - ''
+                      - '&eClic para cambiar.'
+                    permission: essentials.gamemode.creative
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands: ['gmc']
 
-  supervivencia:
-    slot: 31
-    material: IRON_SWORD
-    name: '&eModo supervivencia'
-    lore:
-      - '&8Comando: /gms'
-      - ''
-      - '&eClic para cambiar.'
-    permission: essentials.gamemode.survival
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands: ['gms']
+                  supervivencia:
+                    slot: 31
+                    material: IRON_SWORD
+                    name: '&eModo supervivencia'
+                    lore:
+                      - '&8Comando: /gms'
+                      - ''
+                      - '&eClic para cambiar.'
+                    permission: essentials.gamemode.survival
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands: ['gms']
 
-  espectador:
-    slot: 33
-    material: ENDER_EYE
-    name: '&bModo espectador'
-    lore:
-      - '&8Comando: /gmsp'
-      - ''
-      - '&eClic para cambiar.'
-    permission: essentials.gamemode.spectator
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands: ['gmsp']
+                  espectador:
+                    slot: 33
+                    material: ENDER_EYE
+                    name: '&bModo espectador'
+                    lore:
+                      - '&8Comando: /gmsp'
+                      - ''
+                      - '&eClic para cambiar.'
+                    permission: essentials.gamemode.spectator
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands: ['gmsp']
 
-  vuelo:
-    slot: 38
-    material: FEATHER
-    name: '&fAlternar vuelo'
-    lore:
-      - '&8Comando: /fly'
-      - ''
-      - '&eClic para alternar.'
-    permission: essentials.fly
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands: ['fly']
-    close-on-click: false
+                  vuelo:
+                    slot: 38
+                    material: FEATHER
+                    name: '&fAlternar vuelo'
+                    lore:
+                      - '&8Comando: /fly'
+                      - ''
+                      - '&eClic para alternar.'
+                    permission: essentials.fly
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands: ['fly']
+                    close-on-click: false
 
-  invulnerabilidad:
-    slot: 40
-    material: TOTEM_OF_UNDYING
-    name: '&6Alternar invulnerabilidad'
-    lore:
-      - '&8Comando: /god'
-      - ''
-      - '&eClic para alternar.'
-    permission: essentials.god
-    hide-without-permission: true
-    action: COMMAND_PLAYER
-    commands: ['god']
-    close-on-click: false
+                  invulnerabilidad:
+                    slot: 40
+                    material: TOTEM_OF_UNDYING
+                    name: '&6Alternar invulnerabilidad'
+                    lore:
+                      - '&8Comando: /god'
+                      - ''
+                      - '&eClic para alternar.'
+                    permission: essentials.god
+                    hide-without-permission: true
+                    action: COMMAND_PLAYER
+                    commands: ['god']
+                    close-on-click: false
 
-  volver:
-    slot: 49
-    material: ARROW
-    name: '&eVolver al menú social'
-    action: COMMAND_PLAYER
-    commands: ['social']
+                  volver:
+                    slot: 49
+                    material: ARROW
+                    name: '&eVolver al menú social'
+                    action: COMMAND_PLAYER
+                    commands: ['social']
 
-  cerrar:
-    slot: 53
-    material: BARRIER
-    name: '&cCerrar'
-    action: CLOSE
-""";
+                  cerrar:
+                    slot: 53
+                    material: BARRIER
+                    name: '&cCerrar'
+                    action: CLOSE
+                """;
     }
 
     private void loadCustomMenus() {
         customMenus.clear();
         File folder = new File(getDataFolder(), "Menus");
-        File[] files = folder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml") || name.toLowerCase(Locale.ROOT).endsWith(".yaml"));
-        if (files == null) return;
+        File[] files = folder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml")
+                || name.toLowerCase(Locale.ROOT).endsWith(".yaml"));
+        if (files == null)
+            return;
         for (File file : files) {
             String fileName = file.getName();
             int dot = fileName.lastIndexOf('.');
@@ -1635,14 +1655,17 @@ items:
     private void loadExternalGuiActions() {
         externalGuiActions.clear();
         ConfigurationSection sec = getConfig().getConfigurationSection("external-gui-actions");
-        if (sec == null) return;
+        if (sec == null)
+            return;
         for (String id : sec.getKeys(false)) {
             ConfigurationSection actionSec = sec.getConfigurationSection(id);
-            if (actionSec == null || !actionSec.getBoolean("enabled", true)) continue;
+            if (actionSec == null || !actionSec.getBoolean("enabled", true))
+                continue;
 
             List<Integer> slots = new ArrayList<>(actionSec.getIntegerList("slots"));
             int singleSlot = actionSec.getInt("slot", Integer.MIN_VALUE);
-            if (singleSlot != Integer.MIN_VALUE) slots.add(singleSlot);
+            if (singleSlot != Integer.MIN_VALUE)
+                slots.add(singleSlot);
             slots = slots.stream().filter(i -> i >= 0 && i < 54).distinct().collect(Collectors.toList());
             if (slots.isEmpty()) {
                 getLogger().warning("external-gui-actions." + id + " no tiene slot/slots validos.");
@@ -1651,7 +1674,8 @@ items:
 
             List<String> commands = new ArrayList<>(actionSec.getStringList("commands"));
             String singleCommand = actionSec.getString("command", "");
-            if (commands.isEmpty() && singleCommand != null && !singleCommand.isBlank()) commands.add(singleCommand);
+            if (commands.isEmpty() && singleCommand != null && !singleCommand.isBlank())
+                commands.add(singleCommand);
             List<String> consoleCommands = new ArrayList<>(actionSec.getStringList("console-commands"));
 
             ExternalGuiAction def = new ExternalGuiAction(
@@ -1663,11 +1687,11 @@ items:
                     consoleCommands,
                     actionSec.getBoolean("close-on-click", true),
                     actionSec.getBoolean("cancel-event", true),
-                    actionSec.getString("sound", "")
-            );
+                    actionSec.getString("sound", ""));
             externalGuiActions.add(def);
         }
-        if (!externalGuiActions.isEmpty()) getLogger().info("Puentes de GUIs externas cargados: " + externalGuiActions.size());
+        if (!externalGuiActions.isEmpty())
+            getLogger().info("Puentes de GUIs externas cargados: " + externalGuiActions.size());
     }
 
     private CustomMenuDef parseCustomMenu(String id, YamlConfiguration yaml) {
@@ -1681,25 +1705,33 @@ items:
             for (String pageKey : pagesSec.getKeys(false)) {
                 int page = parsePage(pageKey);
                 ConfigurationSection items = pagesSec.getConfigurationSection(pageKey + ".items");
-                if (items == null) items = pagesSec.getConfigurationSection(pageKey);
+                if (items == null)
+                    items = pagesSec.getConfigurationSection(pageKey);
                 loadCustomMenuItems(def, page, items);
             }
         } else {
             loadCustomMenuItems(def, 1, yaml.getConfigurationSection("items"));
         }
-        if (def.pages.isEmpty()) def.pages.put(1, new ArrayList<>());
+        if (def.pages.isEmpty())
+            def.pages.put(1, new ArrayList<>());
         return def;
     }
 
     private int parsePage(String key) {
-        try { return Math.max(1, Integer.parseInt(key)); } catch (Exception e) { return 1; }
+        try {
+            return Math.max(1, Integer.parseInt(key));
+        } catch (Exception e) {
+            return 1;
+        }
     }
 
     private void openRequestedSocialMenu(Player player, String rawMenu, int page) {
         String menu = normalize(rawMenu);
         if (menu.isBlank() || menu.equals("main") || menu.equals("inicio")) {
-            if (customMenus.containsKey("main")) openCustomMenu(player, "main", Math.max(1, page), "", 1);
-            else openMain(player);
+            if (customMenus.containsKey("main"))
+                openCustomMenu(player, "main", Math.max(1, page), "", 1);
+            else
+                openMain(player);
             return;
         }
         if (menu.equals("titulos") || menu.equals("titles") || menu.equals("titulo")) {
@@ -1707,8 +1739,10 @@ items:
             return;
         }
         if (menu.equals("correo") || menu.equals("mail") || menu.equals("cartas") || menu.equals("carta")) {
-            if (customMenus.containsKey("correo")) openCustomMenu(player, "correo", 1, "menuamigos", 1);
-            else openMailbox(player, 0);
+            if (customMenus.containsKey("correo"))
+                openCustomMenu(player, "correo", 1, "menuamigos", 1);
+            else
+                openMailbox(player, 0);
             return;
         }
         if (menu.equals("mis_titulos") || menu.equals("my_titles") || menu.equals("my-titles")) {
@@ -1731,18 +1765,23 @@ items:
     }
 
     private int normalizeMenuSize(int size) {
-        if (size < 9) size = 9;
-        if (size > 54) size = 54;
-        if (size % 9 != 0) size = ((size / 9) + 1) * 9;
+        if (size < 9)
+            size = 9;
+        if (size > 54)
+            size = 54;
+        if (size % 9 != 0)
+            size = ((size / 9) + 1) * 9;
         return size;
     }
 
     private void loadCustomMenuItems(CustomMenuDef def, int page, ConfigurationSection itemsSec) {
         List<CustomMenuItem> items = def.pages.computeIfAbsent(page, k -> new ArrayList<>());
-        if (itemsSec == null) return;
+        if (itemsSec == null)
+            return;
         for (String key : itemsSec.getKeys(false)) {
             ConfigurationSection sec = itemsSec.getConfigurationSection(key);
-            if (sec == null) continue;
+            if (sec == null)
+                continue;
             int slot = sec.getInt("slot", -1);
             if (slot < 0 || slot >= def.size) {
                 getLogger().warning("Slot invalido en menu " + def.id + " item " + key + ": " + slot);
@@ -1753,10 +1792,12 @@ items:
             String target = normalize(sec.getString("target-menu", sec.getString("menu", "")));
             List<String> commands = new ArrayList<>(sec.getStringList("commands"));
             String singleCommand = sec.getString("command", "");
-            if (commands.isEmpty() && singleCommand != null && !singleCommand.isBlank()) commands.add(singleCommand);
+            if (commands.isEmpty() && singleCommand != null && !singleCommand.isBlank())
+                commands.add(singleCommand);
             List<String> rightCommands = new ArrayList<>(sec.getStringList("right-commands"));
             String singleRightCommand = sec.getString("right-command", "");
-            if (rightCommands.isEmpty() && singleRightCommand != null && !singleRightCommand.isBlank()) rightCommands.add(singleRightCommand);
+            if (rightCommands.isEmpty() && singleRightCommand != null && !singleRightCommand.isBlank())
+                rightCommands.add(singleRightCommand);
             CustomMenuItem item = new CustomMenuItem(
                     key,
                     slot,
@@ -1781,30 +1822,38 @@ items:
                     sec.getString("sound", sec.getString("click-sound", "")),
                     sec.getString("permission", ""),
                     sec.getBoolean("hide-without-permission", sec.getBoolean("hide-no-permission", true)),
-                    sec.getBoolean("use-clan-banner", sec.getBoolean("dynamic-clan-banner", false))
-            );
+                    sec.getBoolean("use-clan-banner", sec.getBoolean("dynamic-clan-banner", false)));
             items.add(item);
         }
     }
 
     private String normalizeAction(String action) {
-        if (action == null) return "";
+        if (action == null)
+            return "";
         String a = action.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
         return switch (a) {
             case "COMMAND", "RUN_COMMAND", "PLAYER_COMMAND", "COMMAND_PLAYER" -> "COMMAND_PLAYER";
             case "OPEN", "OPENMENU", "OPEN_MENU" -> "OPEN_MENU";
-            case "OPEN_CONDITIONAL", "OPEN_CONDITIONAL_MENU", "CONDITIONAL_MENU", "MENU_CONDICIONAL" -> "OPEN_CONDITIONAL_MENU";
+            case "OPEN_CONDITIONAL", "OPEN_CONDITIONAL_MENU", "CONDITIONAL_MENU", "MENU_CONDICIONAL" ->
+                "OPEN_CONDITIONAL_MENU";
             case "MDVCLANS", "MDVCLANS_OPEN", "OPEN_MDVCLANS", "CLAN_DYNAMIC", "CLANES_DINAMICO" -> "MDVCLANS_OPEN";
             case "PREV_PAGE", "PREVIOUS", "PREVIOUS_PAGE" -> "PREVIOUS_PAGE";
             case "NEXT", "NEXT_PAGE" -> "NEXT_PAGE";
             case "OPEN_TITLE", "OPEN_TITLES", "TITLES" -> "OPEN_TITLES";
-            case "OPEN_MMOITEMS_BROWSER", "MMOITEMS_BROWSER", "OPEN_ITEM_BROWSER", "ITEM_BROWSER" -> "OPEN_MMOITEMS_BROWSER";
+            case "OPEN_MMOITEMS_BROWSER", "MMOITEMS_BROWSER", "OPEN_ITEM_BROWSER", "ITEM_BROWSER" ->
+                "OPEN_MMOITEMS_BROWSER";
             case "OPEN_MAIL", "OPEN_MAILBOX", "MAILBOX", "BUZON" -> "OPEN_MAILBOX";
             case "START_MAIL", "START_MAIL_SEND", "SEND_MAIL", "ENVIAR_CARTA" -> "START_MAIL_SEND";
-            case "START_MAIL_TARGET", "START_MAIL_SEND_TARGET", "SEND_MAIL_TARGET", "ENVIAR_CARTA_TARGET", "ENVIAR_CARTA_AMIGO" -> "START_MAIL_SEND_TARGET";
-            case "INVITE_PARTY_TARGET", "PARTY_INVITE_TARGET", "INVITAR_PARTY", "INVITAR_GRUPO", "INVITE_FRIEND_PARTY" -> "INVITE_PARTY_TARGET";
-            case "INVITE_FRIEND_TARGET", "FRIEND_INVITE_TARGET", "SEND_FRIEND_REQUEST", "ENVIAR_SOLICITUD_AMISTAD" -> "INVITE_FRIEND_TARGET";
-            case "SUGGEST_MSG_TARGET", "PREPARE_MSG_TARGET", "PRIVATE_MESSAGE_TARGET", "MENSAJE_PRIVADO_TARGET" -> "SUGGEST_MSG_TARGET";
+            case "START_MAIL_TARGET", "START_MAIL_SEND_TARGET", "SEND_MAIL_TARGET", "ENVIAR_CARTA_TARGET",
+                    "ENVIAR_CARTA_AMIGO" ->
+                "START_MAIL_SEND_TARGET";
+            case "INVITE_PARTY_TARGET", "PARTY_INVITE_TARGET", "INVITAR_PARTY", "INVITAR_GRUPO",
+                    "INVITE_FRIEND_PARTY" ->
+                "INVITE_PARTY_TARGET";
+            case "INVITE_FRIEND_TARGET", "FRIEND_INVITE_TARGET", "SEND_FRIEND_REQUEST", "ENVIAR_SOLICITUD_AMISTAD" ->
+                "INVITE_FRIEND_TARGET";
+            case "SUGGEST_MSG_TARGET", "PREPARE_MSG_TARGET", "PRIVATE_MESSAGE_TARGET", "MENSAJE_PRIVADO_TARGET" ->
+                "SUGGEST_MSG_TARGET";
             case "START_MAIL_BLOCK", "BLOCK_MAIL", "BLOQUEAR_CARTAS" -> "START_MAIL_BLOCK";
             case "START_MAIL_UNBLOCK", "UNBLOCK_MAIL", "DESBLOQUEAR_CARTAS" -> "START_MAIL_UNBLOCK";
             default -> a;
@@ -1813,16 +1862,20 @@ items:
 
     private void openSocialStart(Player player) {
         String start = normalize(getConfig().getString("settings.start-menu", "main"));
-        if (customMenus.containsKey(start)) openCustomMenu(player, start, 1, "", 1);
-        else if (customMenus.containsKey("main")) openCustomMenu(player, "main", 1, "", 1);
-        else openMain(player);
+        if (customMenus.containsKey(start))
+            openCustomMenu(player, start, 1, "", 1);
+        else if (customMenus.containsKey("main"))
+            openCustomMenu(player, "main", 1, "", 1);
+        else
+            openMain(player);
     }
 
     private void openCustomMenu(Player player, String menuId, int page, String previousMenu, int previousPage) {
         openCustomMenu(player, menuId, page, previousMenu, previousPage, null, "", false);
     }
 
-    private void openCustomMenu(Player player, String menuId, int page, String previousMenu, int previousPage, UUID targetUuid, String targetName, boolean targetOnline) {
+    private void openCustomMenu(Player player, String menuId, int page, String previousMenu, int previousPage,
+            UUID targetUuid, String targetName, boolean targetOnline) {
         menuId = normalize(menuId);
         CustomMenuDef def = customMenus.get(menuId);
         if (def == null) {
@@ -1835,30 +1888,41 @@ items:
         }
         int maxPage = def.maxPage();
         page = Math.max(1, Math.min(page, maxPage));
-        MenuHolder holder = new MenuHolder("CUSTOM_MENU", page, menuId, previousMenu == null ? "" : normalize(previousMenu), previousPage <= 0 ? 1 : previousPage, targetUuid, targetName, targetOnline);
-        Inventory inv = Bukkit.createInventory(holder, def.size, color(applyTargetPlaceholders(def.title.replace("{page}", String.valueOf(page)).replace("{max_page}", String.valueOf(maxPage)), player, targetUuid, targetName, targetOnline)));
+        MenuHolder holder = new MenuHolder("CUSTOM_MENU", page, menuId,
+                previousMenu == null ? "" : normalize(previousMenu), previousPage <= 0 ? 1 : previousPage, targetUuid,
+                targetName, targetOnline);
+        Inventory inv = Bukkit.createInventory(holder, def.size, color(applyTargetPlaceholders(
+                def.title.replace("{page}", String.valueOf(page)).replace("{max_page}", String.valueOf(maxPage)),
+                player, targetUuid, targetName, targetOnline)));
         holder.inventory = inv;
         fill(inv);
 
         List<CustomMenuItem> items = def.pages.getOrDefault(page, Collections.emptyList());
         for (CustomMenuItem menuItem : items) {
-            if (!menuItem.isVisible(this, player, targetUuid, targetOnline)) continue;
-            if (!menuItem.permission.isBlank() && !player.hasPermission(menuItem.permission) && menuItem.hideWithoutPermission) continue;
-            if (menuItem.slot >= 0 && menuItem.slot < inv.getSize()) inv.setItem(menuItem.slot, customMenuItemStack(player, menuItem, targetUuid, targetName, targetOnline));
+            if (!menuItem.isVisible(this, player, targetUuid, targetOnline))
+                continue;
+            if (!menuItem.permission.isBlank() && !player.hasPermission(menuItem.permission)
+                    && menuItem.hideWithoutPermission)
+                continue;
+            if (menuItem.slot >= 0 && menuItem.slot < inv.getSize())
+                inv.setItem(menuItem.slot, customMenuItemStack(player, menuItem, targetUuid, targetName, targetOnline));
         }
         player.openInventory(inv);
     }
 
-    private ItemStack customMenuItemStack(Player player, CustomMenuItem def, UUID targetUuid, String targetName, boolean targetOnline) {
+    private ItemStack customMenuItemStack(Player player, CustomMenuItem def, UUID targetUuid, String targetName,
+            boolean targetOnline) {
         String clanBannerData = def.useClanBanner ? getPlayerClanBannerData(player.getUniqueId()) : null;
         boolean usingClanBanner = def.useClanBanner && clanBannerData != null;
         Material mat = Material.matchMaterial(def.material.toUpperCase(Locale.ROOT));
-        if (mat == null) mat = Material.PAPER;
+        if (mat == null)
+            mat = Material.PAPER;
         int amount = Math.max(1, Math.min(64, def.amount));
         ItemStack item = usingClanBanner ? bannerFromSerializedData(clanBannerData) : new ItemStack(mat, amount);
         item.setAmount(amount);
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        if (meta == null)
+            return item;
         if (usingClanBanner) {
             hideBannerTooltip(meta);
         }
@@ -1867,42 +1931,71 @@ items:
             if (texture != null && !texture.isBlank()) {
                 applySkullTexture(skull, texture);
             } else if (def.headOwner != null && !def.headOwner.isBlank()) {
-                OfflinePlayer owner = Bukkit.getOfflinePlayer(applyTargetPlaceholders(def.headOwner, player, targetUuid, targetName, targetOnline));
+                OfflinePlayer owner = Bukkit.getOfflinePlayer(
+                        applyTargetPlaceholders(def.headOwner, player, targetUuid, targetName, targetOnline));
                 skull.setOwningPlayer(owner);
             }
             meta = skull;
         }
-        if (def.name != null && !def.name.isBlank()) meta.setDisplayName(color(applyTargetPlaceholders(def.name, player, targetUuid, targetName, targetOnline)));
+        if (def.name != null && !def.name.isBlank())
+            meta.setDisplayName(color(applyTargetPlaceholders(def.name, player, targetUuid, targetName, targetOnline)));
         List<String> lore = new ArrayList<>();
-        for (String line : def.lore) lore.add(color(applyTargetPlaceholders(line, player, targetUuid, targetName, targetOnline)));
-        if (!lore.isEmpty()) meta.setLore(lore);
-        if (def.action != null && !def.action.isBlank()) meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, def.action);
-        if (def.rightAction != null && !def.rightAction.isBlank()) meta.getPersistentDataContainer().set(keyRightAction, PersistentDataType.STRING, def.rightAction);
-        if (def.targetMenu != null && !def.targetMenu.isBlank()) meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, def.targetMenu);
-        if (def.conditionPlaceholder != null && !def.conditionPlaceholder.isBlank()) meta.getPersistentDataContainer().set(keyConditionPlaceholder, PersistentDataType.STRING, def.conditionPlaceholder);
-        if (def.conditionEquals != null && !def.conditionEquals.isBlank()) meta.getPersistentDataContainer().set(keyConditionEquals, PersistentDataType.STRING, def.conditionEquals);
-        if (def.trueMenu != null && !def.trueMenu.isBlank()) meta.getPersistentDataContainer().set(keyTrueMenu, PersistentDataType.STRING, def.trueMenu);
-        if (def.falseMenu != null && !def.falseMenu.isBlank()) meta.getPersistentDataContainer().set(keyFalseMenu, PersistentDataType.STRING, def.falseMenu);
-        if (def.clansMenu != null && !def.clansMenu.isBlank()) meta.getPersistentDataContainer().set(keyClansMenu, PersistentDataType.STRING, def.clansMenu);
-        if (targetUuid != null) meta.getPersistentDataContainer().set(keyFriendTargetUuid, PersistentDataType.STRING, targetUuid.toString());
-        if (targetName != null && !targetName.isBlank()) meta.getPersistentDataContainer().set(keyFriendTargetName, PersistentDataType.STRING, targetName);
-        meta.getPersistentDataContainer().set(keyFriendTargetOnline, PersistentDataType.STRING, String.valueOf(targetOnline));
-        if (!def.commands.isEmpty()) meta.getPersistentDataContainer().set(keyCommands, PersistentDataType.STRING, String.join("\n", def.commands));
-        if (!def.rightCommands.isEmpty()) meta.getPersistentDataContainer().set(keyRightCommands, PersistentDataType.STRING, String.join("\n", def.rightCommands));
-        if (def.sound != null && !def.sound.isBlank()) meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, def.sound);
-        if (def.permission != null && !def.permission.isBlank()) meta.getPersistentDataContainer().set(keyRequiredPermission, PersistentDataType.STRING, def.permission);
-        meta.getPersistentDataContainer().set(keyCloseOnClick, PersistentDataType.STRING, String.valueOf(def.closeOnClick));
+        for (String line : def.lore)
+            lore.add(color(applyTargetPlaceholders(line, player, targetUuid, targetName, targetOnline)));
+        if (!lore.isEmpty())
+            meta.setLore(lore);
+        if (def.action != null && !def.action.isBlank())
+            meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, def.action);
+        if (def.rightAction != null && !def.rightAction.isBlank())
+            meta.getPersistentDataContainer().set(keyRightAction, PersistentDataType.STRING, def.rightAction);
+        if (def.targetMenu != null && !def.targetMenu.isBlank())
+            meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, def.targetMenu);
+        if (def.conditionPlaceholder != null && !def.conditionPlaceholder.isBlank())
+            meta.getPersistentDataContainer().set(keyConditionPlaceholder, PersistentDataType.STRING,
+                    def.conditionPlaceholder);
+        if (def.conditionEquals != null && !def.conditionEquals.isBlank())
+            meta.getPersistentDataContainer().set(keyConditionEquals, PersistentDataType.STRING, def.conditionEquals);
+        if (def.trueMenu != null && !def.trueMenu.isBlank())
+            meta.getPersistentDataContainer().set(keyTrueMenu, PersistentDataType.STRING, def.trueMenu);
+        if (def.falseMenu != null && !def.falseMenu.isBlank())
+            meta.getPersistentDataContainer().set(keyFalseMenu, PersistentDataType.STRING, def.falseMenu);
+        if (def.clansMenu != null && !def.clansMenu.isBlank())
+            meta.getPersistentDataContainer().set(keyClansMenu, PersistentDataType.STRING, def.clansMenu);
+        if (targetUuid != null)
+            meta.getPersistentDataContainer().set(keyFriendTargetUuid, PersistentDataType.STRING,
+                    targetUuid.toString());
+        if (targetName != null && !targetName.isBlank())
+            meta.getPersistentDataContainer().set(keyFriendTargetName, PersistentDataType.STRING, targetName);
+        meta.getPersistentDataContainer().set(keyFriendTargetOnline, PersistentDataType.STRING,
+                String.valueOf(targetOnline));
+        if (!def.commands.isEmpty())
+            meta.getPersistentDataContainer().set(keyCommands, PersistentDataType.STRING,
+                    String.join("\n", def.commands));
+        if (!def.rightCommands.isEmpty())
+            meta.getPersistentDataContainer().set(keyRightCommands, PersistentDataType.STRING,
+                    String.join("\n", def.rightCommands));
+        if (def.sound != null && !def.sound.isBlank())
+            meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, def.sound);
+        if (def.permission != null && !def.permission.isBlank())
+            meta.getPersistentDataContainer().set(keyRequiredPermission, PersistentDataType.STRING, def.permission);
+        meta.getPersistentDataContainer().set(keyCloseOnClick, PersistentDataType.STRING,
+                String.valueOf(def.closeOnClick));
         item.setItemMeta(meta);
         return item;
     }
 
     private String readTexture(ConfigurationSection sec) {
-        if (sec == null) return "";
+        if (sec == null)
+            return "";
         String texture = sec.getString("custom-head-texture", "");
-        if (texture == null || texture.isBlank()) texture = sec.getString("texture", "");
-        if (texture == null || texture.isBlank()) texture = sec.getString("head-texture", "");
-        if (texture == null || texture.isBlank()) texture = sec.getString("skull-texture", "");
-        if (texture == null || texture.isBlank()) texture = sec.getString("texture-base64", "");
+        if (texture == null || texture.isBlank())
+            texture = sec.getString("texture", "");
+        if (texture == null || texture.isBlank())
+            texture = sec.getString("head-texture", "");
+        if (texture == null || texture.isBlank())
+            texture = sec.getString("skull-texture", "");
+        if (texture == null || texture.isBlank())
+            texture = sec.getString("texture-base64", "");
         return texture == null ? "" : texture.trim();
     }
 
@@ -1911,21 +2004,28 @@ items:
      * Tambien acepta una URL directa http/https por comodidad.
      */
     private String extractTextureUrl(String textureValue) {
-        if (textureValue == null) return "";
+        if (textureValue == null)
+            return "";
         String value = textureValue.trim();
-        if (value.isBlank()) return "";
-        if (value.startsWith("http://") || value.startsWith("https://")) return value;
+        if (value.isBlank())
+            return "";
+        if (value.startsWith("http://") || value.startsWith("https://"))
+            return value;
 
         try {
             String decoded = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
             int urlKey = decoded.indexOf("\"url\"");
-            if (urlKey < 0) return "";
+            if (urlKey < 0)
+                return "";
             int colon = decoded.indexOf(':', urlKey);
-            if (colon < 0) return "";
+            if (colon < 0)
+                return "";
             int firstQuote = decoded.indexOf('\"', colon);
-            if (firstQuote < 0) return "";
+            if (firstQuote < 0)
+                return "";
             int secondQuote = decoded.indexOf('\"', firstQuote + 1);
-            if (secondQuote < 0) return "";
+            if (secondQuote < 0)
+                return "";
             return decoded.substring(firstQuote + 1, secondQuote).replace("\\/", "/");
         } catch (Throwable ignored) {
             return "";
@@ -1938,10 +2038,12 @@ items:
      * Version 1.1.6:
      * - Sin reflexion.
      * - Sin tocar campos internos del SkullMeta.
-     * - Evita IllegalAccessException/IllegalArgumentException en Paper/Purpur 1.21+.
+     * - Evita IllegalAccessException/IllegalArgumentException en Paper/Purpur
+     * 1.21+.
      */
     private void applySkullTexture(SkullMeta skull, String textureValue) {
-        if (skull == null || textureValue == null || textureValue.isBlank()) return;
+        if (skull == null || textureValue == null || textureValue.isBlank())
+            return;
 
         String textureUrl = extractTextureUrl(textureValue.trim());
         if (textureUrl == null || textureUrl.isBlank()) {
@@ -1956,15 +2058,18 @@ items:
             profile.setTextures(textures);
             skull.setOwnerProfile(profile);
         } catch (Throwable ex) {
-            getLogger().warning("No se pudo aplicar textura custom de cabeza con API publica: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            getLogger().warning("No se pudo aplicar textura custom de cabeza con API publica: "
+                    + ex.getClass().getSimpleName() + " - " + ex.getMessage());
         }
     }
 
     private String getPlayerClanBannerData(UUID playerUuid) {
-        if (playerUuid == null) return null;
+        if (playerUuid == null)
+            return null;
         try {
             org.bukkit.plugin.Plugin clans = Bukkit.getPluginManager().getPlugin("MDVClans");
-            if (clans == null || !clans.isEnabled()) return null;
+            if (clans == null || !clans.isEnabled())
+                return null;
             Method method = clans.getClass().getMethod("getPlayerClanBannerData", UUID.class);
             Object result = method.invoke(clans, playerUuid);
             return result == null ? null : String.valueOf(result);
@@ -1985,14 +2090,16 @@ items:
     }
 
     private ItemStack itemStackFromBase64(String data) throws IOException, ClassNotFoundException {
-        try (BukkitObjectInputStream dataInput = new BukkitObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(data)))) {
+        try (BukkitObjectInputStream dataInput = new BukkitObjectInputStream(
+                new ByteArrayInputStream(Base64.getDecoder().decode(data)))) {
             Object object = dataInput.readObject();
             return object instanceof ItemStack stack ? stack : new ItemStack(Material.WHITE_BANNER);
         }
     }
 
     private void hideBannerTooltip(ItemMeta meta) {
-        if (meta == null) return;
+        if (meta == null)
+            return;
         try {
             meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         } catch (Throwable ignored) {
@@ -2001,7 +2108,8 @@ items:
     }
 
     private String applyPlayerPlaceholders(String input, Player player) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         String out = input.replace("{player}", player.getName());
 
         // Atajos internos para menus de MDVSocial.
@@ -2033,8 +2141,10 @@ items:
         return out;
     }
 
-    private String applyTargetPlaceholders(String input, Player player, UUID targetUuid, String targetName, boolean targetOnline) {
-        if (input == null) return "";
+    private String applyTargetPlaceholders(String input, Player player, UUID targetUuid, String targetName,
+            boolean targetOnline) {
+        if (input == null)
+            return "";
         String safeName = targetName == null || targetName.isBlank() ? "jugador" : targetName;
         String uuidText = targetUuid == null ? "" : targetUuid.toString();
 
@@ -2064,7 +2174,8 @@ items:
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             try {
                 out = PlaceholderAPI.setPlaceholders(player, out);
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
         }
         return out;
     }
@@ -2072,18 +2183,24 @@ items:
     private String papi(Player player, String placeholder) {
         try {
             String value = PlaceholderAPI.setPlaceholders(player, placeholder);
-            if (value == null || value.equalsIgnoreCase(placeholder)) return "";
+            if (value == null || value.equalsIgnoreCase(placeholder))
+                return "";
             return value;
         } catch (Throwable ignored) {
             return "";
         }
     }
 
+    /**
+     * Parses a string using Placeholder API.
+     **/
     private String papi(OfflinePlayer player, String placeholder) {
-        if (player == null || placeholder == null || placeholder.isBlank()) return "";
+        if (player == null || placeholder == null || placeholder.isBlank())
+            return "";
         try {
             String value = PlaceholderAPI.setPlaceholders(player, placeholder);
-            if (value == null || value.equalsIgnoreCase(placeholder) || value.contains("%")) return "";
+            if (value == null || value.equalsIgnoreCase(placeholder) || value.contains("%"))
+                return "";
             return value;
         } catch (Throwable ignored) {
             return "";
@@ -2091,7 +2208,8 @@ items:
     }
 
     private String stripPercent(String value) {
-        if (value == null) return "0";
+        if (value == null)
+            return "0";
         return value.replace("%", "").trim();
     }
 
@@ -2107,12 +2225,13 @@ items:
         int filled = (int) Math.round((percent / 100.0) * total);
         StringBuilder bar = new StringBuilder();
         bar.append("&e");
-        for (int i = 0; i < filled; i++) bar.append("|");
+        for (int i = 0; i < filled; i++)
+            bar.append("|");
         bar.append("&7");
-        for (int i = filled; i < total; i++) bar.append("|");
+        for (int i = filled; i < total; i++)
+            bar.append("|");
         return bar.toString();
     }
-
 
     private boolean mailEnabled() {
         return getConfig().getBoolean("mail.enabled", true);
@@ -2128,8 +2247,10 @@ items:
             return;
         }
         if (args.length == 0) {
-            if (customMenus.containsKey("correo")) openCustomMenu(player, "correo", 1, "menuamigos", 1);
-            else openMailbox(player, 0);
+            if (customMenus.containsKey("correo"))
+                openCustomMenu(player, "correo", 1, "menuamigos", 1);
+            else
+                openMailbox(player, 0);
             return;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
@@ -2149,12 +2270,16 @@ items:
                 }
             }
             case "bloquear", "block" -> {
-                if (args.length >= 2) blockMailByName(player, args[1]);
-                else startMailBlockPrompt(player, true);
+                if (args.length >= 2)
+                    blockMailByName(player, args[1]);
+                else
+                    startMailBlockPrompt(player, true);
             }
             case "desbloquear", "unblock" -> {
-                if (args.length >= 2) unblockMailByName(player, args[1]);
-                else startMailBlockPrompt(player, false);
+                if (args.length >= 2)
+                    unblockMailByName(player, args[1]);
+                else
+                    startMailBlockPrompt(player, false);
             }
             case "bloqueados", "blocked" -> sendBlockedList(player);
             case "cancelar", "cancel" -> {
@@ -2176,21 +2301,43 @@ items:
     }
 
     private void startMailRecipientPrompt(Player player, String returnMenu, int returnPage) {
-        if (!mailEnabled()) { msg(player, "mail-disabled"); return; }
-        if (!player.hasPermission("mdvsocial.mail.send")) { msg(player, "no-permission"); return; }
-        mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.RECIPIENT, null, returnMenu, returnPage));
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.send")) {
+            msg(player, "no-permission");
+            return;
+        }
+        mailSessions.put(player.getUniqueId(),
+                new MailComposeSession(MailStage.RECIPIENT, null, returnMenu, returnPage));
         msg(player, "mail-recipient-prompt");
     }
 
-    private void startMailMessagePromptToTarget(Player player, UUID targetUuid, String fallbackName, String returnMenu, int returnPage) {
-        if (!mailEnabled()) { msg(player, "mail-disabled"); return; }
-        if (!player.hasPermission("mdvsocial.mail.send")) { msg(player, "no-permission"); return; }
-        if (targetUuid == null) { msg(player, "social-target-not-found"); return; }
-        if (targetUuid.equals(player.getUniqueId())) { msg(player, "mail-self"); return; }
+    private void startMailMessagePromptToTarget(Player player, UUID targetUuid, String fallbackName, String returnMenu,
+            int returnPage) {
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.send")) {
+            msg(player, "no-permission");
+            return;
+        }
+        if (targetUuid == null) {
+            msg(player, "social-target-not-found");
+            return;
+        }
+        if (targetUuid.equals(player.getUniqueId())) {
+            msg(player, "mail-self");
+            return;
+        }
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
         String targetName = target.getName() == null || target.getName().isBlank() ? fallbackName : target.getName();
-        if (targetName == null || targetName.isBlank()) targetName = "jugador";
-        mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.MESSAGE, targetName, targetUuid, returnMenu, returnPage));
+        if (targetName == null || targetName.isBlank())
+            targetName = "jugador";
+        mailSessions.put(player.getUniqueId(),
+                new MailComposeSession(MailStage.MESSAGE, targetName, targetUuid, returnMenu, returnPage));
         msg(player, "mail-message-prompt", Map.of("target", targetName, "max", String.valueOf(getMaxMailLength())));
     }
 
@@ -2199,20 +2346,29 @@ items:
     }
 
     private void startMailBlockPrompt(Player player, boolean block, String returnMenu, int returnPage) {
-        mailSessions.put(player.getUniqueId(), new MailComposeSession(block ? MailStage.BLOCK : MailStage.UNBLOCK, null, returnMenu, returnPage));
+        mailSessions.put(player.getUniqueId(),
+                new MailComposeSession(block ? MailStage.BLOCK : MailStage.UNBLOCK, null, returnMenu, returnPage));
         msg(player, block ? "mail-block-prompt" : "mail-unblock-prompt");
     }
 
     private void startMailReplyFromMail(Player player, String mailId, int returnPage) {
-        if (!mailEnabled()) { msg(player, "mail-disabled"); return; }
-        if (!player.hasPermission("mdvsocial.mail.send")) { msg(player, "no-permission"); return; }
-        if (mailId == null || mailId.isBlank() || !mailData.contains(mailPath(player.getUniqueId(), "letters." + mailId))) {
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.send")) {
+            msg(player, "no-permission");
+            return;
+        }
+        if (mailId == null || mailId.isBlank()
+                || !mailData.contains(mailPath(player.getUniqueId(), "letters." + mailId))) {
             msg(player, "mail-not-found");
             return;
         }
         String base = mailPath(player.getUniqueId(), "letters." + mailId);
         String fromUuidText = mailData.getString(base + ".from-uuid", "");
-        String fromName = mailData.getString(base + ".from-name", getConfig().getString("mail.server-author-name", "MDVCRAFT"));
+        String fromName = mailData.getString(base + ".from-name",
+                getConfig().getString("mail.server-author-name", "MDVCRAFT"));
         if (fromUuidText == null || fromUuidText.isBlank()) {
             msg(player, "mail-cannot-reply-server");
             return;
@@ -2222,7 +2378,8 @@ items:
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
             String targetName = target.getName() == null || target.getName().isBlank() ? fromName : target.getName();
             player.closeInventory();
-            mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.MESSAGE, targetName, targetUuid, "MAILBOX", Math.max(0, returnPage)));
+            mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.MESSAGE, targetName, targetUuid,
+                    "MAILBOX", Math.max(0, returnPage)));
             msg(player, "mail-reply-prompt", Map.of("target", targetName, "max", String.valueOf(getMaxMailLength())));
         } catch (Exception ignored) {
             msg(player, "mail-cannot-reply-server");
@@ -2233,7 +2390,8 @@ items:
     public void onMailChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         MailComposeSession session = mailSessions.get(player.getUniqueId());
-        if (session == null) return;
+        if (session == null)
+            return;
         event.setCancelled(true);
         String text = event.getMessage() == null ? "" : event.getMessage().trim();
         Bukkit.getScheduler().runTask(this, () -> handleMailChatInput(player, text));
@@ -2241,7 +2399,8 @@ items:
 
     private void handleMailChatInput(Player player, String text) {
         MailComposeSession session = mailSessions.get(player.getUniqueId());
-        if (session == null) return;
+        if (session == null)
+            return;
         if (text.equalsIgnoreCase("cancelar") || text.equalsIgnoreCase("cancel")) {
             mailSessions.remove(player.getUniqueId());
             msg(player, "mail-cancelled");
@@ -2258,16 +2417,20 @@ items:
                 msg(player, "mail-self");
                 return;
             }
-            mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.MESSAGE, target.getName() == null ? text : target.getName(), session.returnMenu, session.returnPage));
-            msg(player, "mail-message-prompt", Map.of("target", target.getName() == null ? text : target.getName(), "max", String.valueOf(getMaxMailLength())));
+            mailSessions.put(player.getUniqueId(), new MailComposeSession(MailStage.MESSAGE,
+                    target.getName() == null ? text : target.getName(), session.returnMenu, session.returnPage));
+            msg(player, "mail-message-prompt", Map.of("target", target.getName() == null ? text : target.getName(),
+                    "max", String.valueOf(getMaxMailLength())));
             return;
         }
         if (session.stage == MailStage.MESSAGE) {
             String targetName = session.targetName;
             UUID targetUuid = session.targetUuid;
             mailSessions.remove(player.getUniqueId());
-            if (targetUuid != null) sendMailByUuid(player, targetUuid, targetName, text);
-            else sendMailByName(player, targetName, text);
+            if (targetUuid != null)
+                sendMailByUuid(player, targetUuid, targetName, text);
+            else
+                sendMailByName(player, targetName, text);
             return;
         }
         if (session.stage == MailStage.BLOCK) {
@@ -2282,12 +2445,15 @@ items:
     }
 
     private OfflinePlayer findKnownOfflinePlayer(String name) {
-        if (name == null || name.isBlank()) return null;
+        if (name == null || name.isBlank())
+            return null;
         Player online = Bukkit.getPlayerExact(name);
-        if (online != null) return online;
+        if (online != null)
+            return online;
         OfflinePlayer off = Bukkit.getOfflinePlayer(name);
         boolean allowUnknown = getConfig().getBoolean("mail.allow-unknown-targets", false);
-        if (allowUnknown || off.hasPlayedBefore()) return off;
+        if (allowUnknown || off.hasPlayedBefore())
+            return off;
         return null;
     }
 
@@ -2306,7 +2472,8 @@ items:
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
-        if (target == null || (!target.hasPlayedBefore() && !target.isOnline() && !getConfig().getBoolean("mail.allow-unknown-targets", false))) {
+        if (target == null || (!target.hasPlayedBefore() && !target.isOnline()
+                && !getConfig().getBoolean("mail.allow-unknown-targets", false))) {
             msg(sender, "mail-player-not-found");
             return;
         }
@@ -2314,9 +2481,18 @@ items:
     }
 
     private void sendMail(Player sender, OfflinePlayer target, String message) {
-        if (!mailEnabled()) { msg(sender, "mail-disabled"); return; }
-        if (!sender.hasPermission("mdvsocial.mail.send")) { msg(sender, "no-permission"); return; }
-        if (target.getUniqueId().equals(sender.getUniqueId())) { msg(sender, "mail-self"); return; }
+        if (!mailEnabled()) {
+            msg(sender, "mail-disabled");
+            return;
+        }
+        if (!sender.hasPermission("mdvsocial.mail.send")) {
+            msg(sender, "no-permission");
+            return;
+        }
+        if (target.getUniqueId().equals(sender.getUniqueId())) {
+            msg(sender, "mail-self");
+            return;
+        }
         String clean = sanitizeMailMessage(message);
         if (clean.isBlank()) {
             msg(sender, "mail-empty");
@@ -2328,23 +2504,29 @@ items:
             return;
         }
         if (isMailBlocked(target.getUniqueId(), sender.getUniqueId())) {
-            msg(sender, "mail-blocked-by-target", Map.of("target", target.getName() == null ? "ese jugador" : target.getName()));
+            msg(sender, "mail-blocked-by-target",
+                    Map.of("target", target.getName() == null ? "ese jugador" : target.getName()));
             return;
         }
         int limit = getMailboxLimit(target);
         int count = getMailIds(target.getUniqueId()).size();
         if (count >= limit) {
-            msg(sender, "mail-full", Map.of("target", target.getName() == null ? "ese jugador" : target.getName(), "limit", String.valueOf(limit)));
+            msg(sender, "mail-full", Map.of("target", target.getName() == null ? "ese jugador" : target.getName(),
+                    "limit", String.valueOf(limit)));
             return;
         }
         long expiresAt = System.currentTimeMillis() + getMailExpireMillis();
-        storeMail(target.getUniqueId(), target.getName() == null ? "jugador" : target.getName(), sender.getUniqueId().toString(), sender.getName(), clean, expiresAt);
+        storeMail(target.getUniqueId(), target.getName() == null ? "jugador" : target.getName(),
+                sender.getUniqueId().toString(), sender.getName(), clean, expiresAt);
         saveMailData();
         msg(sender, "mail-sent", Map.of("target", target.getName() == null ? "jugador" : target.getName()));
     }
 
     private void sendServerMailAll(CommandSender sender, String message, long expireDays) {
-        if (!mailEnabled()) { msg(sender, "mail-disabled"); return; }
+        if (!mailEnabled()) {
+            msg(sender, "mail-disabled");
+            return;
+        }
         String clean = sanitizeMailMessage(message);
         if (clean.isBlank()) {
             msg(sender, "mail-empty");
@@ -2364,7 +2546,8 @@ items:
         int sent = 0;
         int skipped = 0;
         for (OfflinePlayer target : Bukkit.getOfflinePlayers()) {
-            if (target == null || target.getUniqueId() == null || !target.hasPlayedBefore()) continue;
+            if (target == null || target.getUniqueId() == null || !target.hasPlayedBefore())
+                continue;
             if (!ignoreLimit) {
                 int limit = getMailboxLimit(target);
                 int count = getMailIds(target.getUniqueId()).size();
@@ -2373,7 +2556,8 @@ items:
                     continue;
                 }
             }
-            storeMail(target.getUniqueId(), target.getName() == null ? "jugador" : target.getName(), "", author, clean, expiresAt, sentAt, "SERVER_BROADCAST", campaignId);
+            storeMail(target.getUniqueId(), target.getName() == null ? "jugador" : target.getName(), "", author, clean,
+                    expiresAt, sentAt, "SERVER_BROADCAST", campaignId);
             sent++;
         }
         String registry = "broadcasts." + campaignId;
@@ -2384,7 +2568,8 @@ items:
         mailData.set(registry + ".recipients", sent);
         mailData.set(registry + ".skipped", skipped);
         saveMailData();
-        msg(sender, "mail-broadcast-sent", Map.of("sent", String.valueOf(sent), "skipped", String.valueOf(skipped), "id", campaignId));
+        msg(sender, "mail-broadcast-sent",
+                Map.of("sent", String.valueOf(sent), "skipped", String.valueOf(skipped), "id", campaignId));
     }
 
     private String createCampaignId() {
@@ -2393,11 +2578,14 @@ items:
         return time + "-" + random;
     }
 
-    private String storeMail(UUID targetUuid, String toName, String fromUuid, String fromName, String message, long expiresAt) {
-        return storeMail(targetUuid, toName, fromUuid, fromName, message, expiresAt, System.currentTimeMillis(), "", "");
+    private String storeMail(UUID targetUuid, String toName, String fromUuid, String fromName, String message,
+            long expiresAt) {
+        return storeMail(targetUuid, toName, fromUuid, fromName, message, expiresAt, System.currentTimeMillis(), "",
+                "");
     }
 
-    private String storeMail(UUID targetUuid, String toName, String fromUuid, String fromName, String message, long expiresAt, long sentAt, String type, String campaignId) {
+    private String storeMail(UUID targetUuid, String toName, String fromUuid, String fromName, String message,
+            long expiresAt, long sentAt, String type, String campaignId) {
         String id = UUID.randomUUID().toString();
         String base = mailPath(targetUuid, "letters." + id);
         mailData.set(base + ".from-uuid", fromUuid == null ? "" : fromUuid);
@@ -2407,38 +2595,53 @@ items:
         mailData.set(base + ".sent-at", sentAt);
         mailData.set(base + ".expires-at", expiresAt);
         mailData.set(base + ".read", false);
-        if (type != null && !type.isBlank()) mailData.set(base + ".type", type);
-        if (campaignId != null && !campaignId.isBlank()) mailData.set(base + ".broadcast-id", campaignId);
+        if (type != null && !type.isBlank())
+            mailData.set(base + ".type", type);
+        if (campaignId != null && !campaignId.isBlank())
+            mailData.set(base + ".broadcast-id", campaignId);
         return id;
     }
 
     private void sendWelcomeMailIfNeeded(Player player, boolean firstJoin) {
-        if (player == null || !player.isOnline()) return;
-        if (!getConfig().getBoolean("mail.welcome.enabled", true)) return;
-        if (getConfig().getBoolean("mail.welcome.only-first-join", true) && !firstJoin) return;
+        if (player == null || !player.isOnline())
+            return;
+        if (!getConfig().getBoolean("mail.welcome.enabled", true))
+            return;
+        if (getConfig().getBoolean("mail.welcome.only-first-join", true) && !firstJoin)
+            return;
         sendWelcomeMail(player, false);
     }
 
     private void sendWelcomeMail(Player player, boolean force) {
-        if (player == null || !mailEnabled()) return;
+        if (player == null || !mailEnabled())
+            return;
         String welcomeId = normalize(getConfig().getString("mail.welcome.id", "bienvenida-v1"));
-        if (welcomeId.isBlank()) welcomeId = "bienvenida-v1";
+        if (welcomeId.isBlank())
+            welcomeId = "bienvenida-v1";
         String marker = mailPath(player.getUniqueId(), "system.welcome-delivered." + welcomeId);
-        if (!force && mailData.getBoolean(marker, false)) return;
+        if (!force && mailData.getBoolean(marker, false))
+            return;
 
-        String message = sanitizeMailMessage(getConfig().getString("mail.welcome.message", "¡Bienvenido a MDVCRAFT! Revisa el menú social para descubrir tus sistemas de aventura."));
-        if (message.isBlank()) return;
+        String message = sanitizeMailMessage(getConfig().getString("mail.welcome.message",
+                "¡Bienvenido a MDVCRAFT! Revisa el menú social para descubrir tus sistemas de aventura."));
+        if (message.isBlank())
+            return;
         int max = getMaxMailLength();
-        if (message.length() > max) message = message.substring(0, Math.max(1, max));
+        if (message.length() > max)
+            message = message.substring(0, Math.max(1, max));
         boolean ignoreLimit = getConfig().getBoolean("mail.welcome.ignore-mailbox-limit", true);
-        if (!ignoreLimit && getMailIds(player.getUniqueId()).size() >= getMailboxLimit(player)) return;
+        if (!ignoreLimit && getMailIds(player.getUniqueId()).size() >= getMailboxLimit(player))
+            return;
 
         long sentAt = System.currentTimeMillis();
         long days = Math.max(1L, getConfig().getLong("mail.welcome.expire-days", 3L));
         long expiresAt = sentAt + days * 24L * 60L * 60L * 1000L;
-        String author = getConfig().getString("mail.welcome.author-name", getConfig().getString("mail.server-author-name", "MDVCRAFT"));
-        storeMail(player.getUniqueId(), player.getName(), "", author, message, expiresAt, sentAt, "WELCOME", "welcome-" + welcomeId);
-        if (!force) mailData.set(marker, true);
+        String author = getConfig().getString("mail.welcome.author-name",
+                getConfig().getString("mail.server-author-name", "MDVCRAFT"));
+        storeMail(player.getUniqueId(), player.getName(), "", author, message, expiresAt, sentAt, "WELCOME",
+                "welcome-" + welcomeId);
+        if (!force)
+            mailData.set(marker, true);
         saveMailData();
 
         // La carta de bienvenida se entrega silenciosamente por defecto.
@@ -2463,7 +2666,8 @@ items:
         for (int i = start; i < Math.min(campaigns.size(), start + perPage); i++) {
             ServerMailCampaign campaign = campaigns.get(i);
             String expiry = campaign.expiresAt <= 0 ? "Nunca" : daysLeftText(campaign.expiresAt);
-            sender.sendMessage(color("&e" + campaign.id + " &7| &f" + campaign.author + " &7| &a" + campaign.recipients.size() + " buzones &7| &c" + expiry));
+            sender.sendMessage(color("&e" + campaign.id + " &7| &f" + campaign.author + " &7| &a"
+                    + campaign.recipients.size() + " buzones &7| &c" + expiry));
             sender.sendMessage(color("  &8" + shorten(campaign.message, 72)));
         }
         sender.sendMessage(color("&7Usa &e/mdvsocial mail view <id> &7o &e/mdvsocial mail delete <id>&7."));
@@ -2478,8 +2682,10 @@ items:
         sender.sendMessage(color("&6Correo global &e" + campaign.id));
         sender.sendMessage(color("&7Autor: &f" + campaign.author));
         sender.sendMessage(color("&7Enviado: &f" + formatTime(campaign.sentAt)));
-        sender.sendMessage(color("&7Expira: &f" + (campaign.expiresAt <= 0 ? "Nunca" : formatTime(campaign.expiresAt))));
-        sender.sendMessage(color("&7Buzones activos: &a" + campaign.recipients.size() + " &7(No leídos: &e" + campaign.unread + "&7)"));
+        sender.sendMessage(
+                color("&7Expira: &f" + (campaign.expiresAt <= 0 ? "Nunca" : formatTime(campaign.expiresAt))));
+        sender.sendMessage(color(
+                "&7Buzones activos: &a" + campaign.recipients.size() + " &7(No leídos: &e" + campaign.unread + "&7)"));
         sender.sendMessage(color("&7Mensaje: &f" + campaign.message));
     }
 
@@ -2494,7 +2700,8 @@ items:
         if (mailboxes != null) {
             for (String uuidText : new ArrayList<>(mailboxes.getKeys(false))) {
                 ConfigurationSection letters = mailData.getConfigurationSection("mailbox." + uuidText + ".letters");
-                if (letters == null) continue;
+                if (letters == null)
+                    continue;
                 for (String letterId : new ArrayList<>(letters.getKeys(false))) {
                     String base = "mailbox." + uuidText + ".letters." + letterId;
                     if (campaign.id.equalsIgnoreCase(effectiveCampaignId(base))) {
@@ -2510,7 +2717,8 @@ items:
     }
 
     private ServerMailCampaign findServerMailCampaign(String id) {
-        if (id == null || id.isBlank()) return null;
+        if (id == null || id.isBlank())
+            return null;
         return collectServerMailCampaigns().stream().filter(c -> c.id.equalsIgnoreCase(id)).findFirst().orElse(null);
     }
 
@@ -2518,32 +2726,45 @@ items:
         cleanupExpiredMail();
         Map<String, ServerMailCampaign> campaigns = new LinkedHashMap<>();
         ConfigurationSection mailboxes = mailData.getConfigurationSection("mailbox");
-        if (mailboxes == null) return new ArrayList<>();
+        if (mailboxes == null)
+            return new ArrayList<>();
 
         for (String uuidText : mailboxes.getKeys(false)) {
             UUID recipient;
-            try { recipient = UUID.fromString(uuidText); } catch (Exception ignored) { continue; }
+            try {
+                recipient = UUID.fromString(uuidText);
+            } catch (Exception ignored) {
+                continue;
+            }
             ConfigurationSection letters = mailData.getConfigurationSection("mailbox." + uuidText + ".letters");
-            if (letters == null) continue;
+            if (letters == null)
+                continue;
             for (String letterId : letters.getKeys(false)) {
                 String base = "mailbox." + uuidText + ".letters." + letterId;
                 String type = mailData.getString(base + ".type", "");
                 String fromUuid = mailData.getString(base + ".from-uuid", "");
                 boolean serverBroadcast = "SERVER_BROADCAST".equalsIgnoreCase(type)
-                        || (fromUuid.isBlank() && !"WELCOME".equalsIgnoreCase(type) && !"MDVCLANS_INVITE".equalsIgnoreCase(type));
-                if (!serverBroadcast) continue;
+                        || (fromUuid.isBlank() && !"WELCOME".equalsIgnoreCase(type)
+                                && !"MDVCLANS_INVITE".equalsIgnoreCase(type));
+                if (!serverBroadcast)
+                    continue;
 
                 String campaignId = effectiveCampaignId(base);
                 String author = mailData.getString(base + ".from-name", "MDVCRAFT");
                 String message = mailData.getString(base + ".message", "");
                 long sentAt = mailData.getLong(base + ".sent-at", 0L);
                 long expiresAt = mailData.getLong(base + ".expires-at", 0L);
-                ServerMailCampaign campaign = campaigns.computeIfAbsent(campaignId, ignored -> new ServerMailCampaign(campaignId, author, message, sentAt, expiresAt));
+                ServerMailCampaign campaign = campaigns.computeIfAbsent(campaignId,
+                        ignored -> new ServerMailCampaign(campaignId, author, message, sentAt, expiresAt));
                 campaign.recipients.add(recipient);
-                if (!mailData.getBoolean(base + ".read", false)) campaign.unread++;
-                if (campaign.sentAt <= 0 || (sentAt > 0 && sentAt < campaign.sentAt)) campaign.sentAt = sentAt;
-                if (campaign.expiresAt == 0 || expiresAt == 0) campaign.expiresAt = 0;
-                else campaign.expiresAt = Math.max(campaign.expiresAt, expiresAt);
+                if (!mailData.getBoolean(base + ".read", false))
+                    campaign.unread++;
+                if (campaign.sentAt <= 0 || (sentAt > 0 && sentAt < campaign.sentAt))
+                    campaign.sentAt = sentAt;
+                if (campaign.expiresAt == 0 || expiresAt == 0)
+                    campaign.expiresAt = 0;
+                else
+                    campaign.expiresAt = Math.max(campaign.expiresAt, expiresAt);
             }
         }
         List<ServerMailCampaign> out = new ArrayList<>(campaigns.values());
@@ -2553,7 +2774,8 @@ items:
 
     private String effectiveCampaignId(String mailBase) {
         String stored = mailData.getString(mailBase + ".broadcast-id", "");
-        if (!stored.isBlank()) return stored;
+        if (!stored.isBlank())
+            return stored;
         String author = mailData.getString(mailBase + ".from-name", "MDVCRAFT");
         String message = mailData.getString(mailBase + ".message", "");
         long sentMinute = mailData.getLong(mailBase + ".sent-at", 0L) / 60_000L;
@@ -2561,27 +2783,35 @@ items:
         return "legacy-" + Integer.toUnsignedString(Objects.hash(author, message, sentMinute, expiryMinute), 36);
     }
 
-    public boolean sendClanInviteMail(UUID targetUuid, String targetName, UUID inviterUuid, String fromName, String clanTag, String clanName, String message, long expiresAt) {
-        return sendClanInviteMail(targetUuid, targetName, inviterUuid, fromName, clanTag, clanName, message, "", expiresAt);
+    public boolean sendClanInviteMail(UUID targetUuid, String targetName, UUID inviterUuid, String fromName,
+            String clanTag, String clanName, String message, long expiresAt) {
+        return sendClanInviteMail(targetUuid, targetName, inviterUuid, fromName, clanTag, clanName, message, "",
+                expiresAt);
     }
 
-    public boolean sendClanInviteMail(UUID targetUuid, String targetName, UUID inviterUuid, String fromName, String clanTag, String clanName, String message, String clanBannerData, long expiresAt) {
-        if (!mailEnabled() || targetUuid == null || clanTag == null || clanTag.isBlank()) return false;
+    public boolean sendClanInviteMail(UUID targetUuid, String targetName, UUID inviterUuid, String fromName,
+            String clanTag, String clanName, String message, String clanBannerData, long expiresAt) {
+        if (!mailEnabled() || targetUuid == null || clanTag == null || clanTag.isBlank())
+            return false;
         String clean = sanitizeMailMessage(message);
-        if (clean.isBlank()) clean = "El clan " + clanName + " [" + clanTag + "] te invitó a unirte.";
+        if (clean.isBlank())
+            clean = "El clan " + clanName + " [" + clanTag + "] te invitó a unirte.";
         int max = getMaxMailLength();
-        if (clean.length() > max) clean = clean.substring(0, Math.max(0, max - 3)) + "...";
+        if (clean.length() > max)
+            clean = clean.substring(0, Math.max(0, max - 3)) + "...";
 
         boolean ignoreLimit = getConfig().getBoolean("mail.clan-invites.ignore-mailbox-limit", true);
         if (!ignoreLimit) {
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
             int limit = getMailboxLimit(target);
             int count = getMailIds(targetUuid).size();
-            if (count >= limit) return false;
+            if (count >= limit)
+                return false;
         }
 
         String senderName = fromName == null || fromName.isBlank() ? "MDVClans" : fromName;
-        String id = storeMail(targetUuid, targetName == null || targetName.isBlank() ? "jugador" : targetName, inviterUuid == null ? "" : inviterUuid.toString(), senderName, clean, expiresAt);
+        String id = storeMail(targetUuid, targetName == null || targetName.isBlank() ? "jugador" : targetName,
+                inviterUuid == null ? "" : inviterUuid.toString(), senderName, clean, expiresAt);
         String base = mailPath(targetUuid, "letters." + id);
         mailData.set(base + ".type", "MDVCLANS_INVITE");
         mailData.set(base + ".clan-tag", clanTag);
@@ -2593,7 +2823,8 @@ items:
     }
 
     private String sanitizeMailMessage(String message) {
-        if (message == null) return "";
+        if (message == null)
+            return "";
         return message.replace('\n', ' ').replace('\r', ' ').trim();
     }
 
@@ -2614,7 +2845,8 @@ items:
                 Player online = player.getPlayer();
                 for (String perm : sec.getKeys(false)) {
                     int value = sec.getInt(perm, limit);
-                    if (online.hasPermission(perm) && value > limit) limit = value;
+                    if (online.hasPermission(perm) && value > limit)
+                        limit = value;
                 }
             }
         }
@@ -2628,30 +2860,39 @@ items:
     private List<String> getMailIds(UUID uuid) {
         cleanupExpiredMailFor(uuid);
         ConfigurationSection sec = mailData.getConfigurationSection(mailPath(uuid, "letters"));
-        if (sec == null) return new ArrayList<>();
+        if (sec == null)
+            return new ArrayList<>();
         List<String> ids = new ArrayList<>(sec.getKeys(false));
-        ids.sort((a, b) -> Long.compare(mailData.getLong(mailPath(uuid, "letters." + b + ".sent-at"), 0L), mailData.getLong(mailPath(uuid, "letters." + a + ".sent-at"), 0L)));
+        ids.sort((a, b) -> Long.compare(mailData.getLong(mailPath(uuid, "letters." + b + ".sent-at"), 0L),
+                mailData.getLong(mailPath(uuid, "letters." + a + ".sent-at"), 0L)));
         return ids;
     }
 
     private void cleanupExpiredMail() {
-        if (mailData == null) return;
+        if (mailData == null)
+            return;
         ConfigurationSection mailboxes = mailData.getConfigurationSection("mailbox");
-        if (mailboxes == null) return;
+        if (mailboxes == null)
+            return;
         boolean changed = false;
         for (String uuidText : mailboxes.getKeys(false)) {
             try {
                 UUID uuid = UUID.fromString(uuidText);
-                if (cleanupExpiredMailFor(uuid)) changed = true;
-            } catch (Exception ignored) { }
+                if (cleanupExpiredMailFor(uuid))
+                    changed = true;
+            } catch (Exception ignored) {
+            }
         }
-        if (changed) saveMailData();
+        if (changed)
+            saveMailData();
     }
 
     private boolean cleanupExpiredMailFor(UUID uuid) {
-        if (mailData == null) return false;
+        if (mailData == null)
+            return false;
         ConfigurationSection sec = mailData.getConfigurationSection(mailPath(uuid, "letters"));
-        if (sec == null) return false;
+        if (sec == null)
+            return false;
         long now = System.currentTimeMillis();
         boolean changed = false;
         for (String id : new ArrayList<>(sec.getKeys(false))) {
@@ -2661,13 +2902,20 @@ items:
                 changed = true;
             }
         }
-        if (changed) saveMailData();
+        if (changed)
+            saveMailData();
         return changed;
     }
 
     private void openMailbox(Player player, int page) {
-        if (!mailEnabled()) { msg(player, "mail-disabled"); return; }
-        if (!player.hasPermission("mdvsocial.mail.read")) { msg(player, "no-permission"); return; }
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.read")) {
+            msg(player, "no-permission");
+            return;
+        }
         List<String> ids = getMailIds(player.getUniqueId());
         List<Integer> slots = getMailSlots();
         int size = normalizeMenuSize(getConfig().getInt("mail.menus.mailbox.size", 54));
@@ -2684,22 +2932,29 @@ items:
         int start = page * perPage;
         for (int i = 0; i < perPage; i++) {
             int index = start + i;
-            if (index >= ids.size()) break;
+            if (index >= ids.size())
+                break;
             int slot = slots.get(i);
-            if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, mailItem(player, ids.get(index)));
+            if (slot >= 0 && slot < inv.getSize())
+                inv.setItem(slot, mailItem(player, ids.get(index)));
         }
-        if (ids.isEmpty()) inv.setItem(size / 2, emptyMailboxItem());
-        if (page > 0) inv.setItem(size - 9, navItem("previous-page", "PREVIOUS_PAGE"));
+        if (ids.isEmpty())
+            inv.setItem(size / 2, emptyMailboxItem());
+        if (page > 0)
+            inv.setItem(size - 9, navItem("previous-page", "PREVIOUS_PAGE"));
         inv.setItem(size - 5, navItem("back", "OPEN_MENU"));
         setTargetMenuOnItem(inv, size - 5, "correo");
-        if (page < maxPage) inv.setItem(size - 1, navItem("next-page", "NEXT_PAGE"));
-        else inv.setItem(size - 1, navItem("close", "CLOSE"));
+        if (page < maxPage)
+            inv.setItem(size - 1, navItem("next-page", "NEXT_PAGE"));
+        else
+            inv.setItem(size - 1, navItem("close", "CLOSE"));
         player.openInventory(inv);
     }
 
     private List<Integer> getMailSlots() {
         List<Integer> slots = getConfig().getIntegerList("mail.menus.mailbox.slots");
-        if (slots == null || slots.isEmpty()) return new ArrayList<>(listSlots);
+        if (slots == null || slots.isEmpty())
+            return new ArrayList<>(listSlots);
         return slots.stream().filter(i -> i >= 0 && i < 54).collect(Collectors.toList());
     }
 
@@ -2708,7 +2963,8 @@ items:
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(color(getConfig().getString("mail.items.empty.name", "&7Buzon vacio")));
         List<String> lore = getConfig().getStringList("mail.items.empty.lore");
-        if (lore.isEmpty()) lore = List.of("&8No tienes cartas guardadas.");
+        if (lore.isEmpty())
+            lore = List.of("&8No tienes cartas guardadas.");
         meta.setLore(lore.stream().map(this::color).collect(Collectors.toList()));
         item.setItemMeta(meta);
         return item;
@@ -2725,15 +2981,19 @@ items:
         boolean clanInviteMail = "MDVCLANS_INVITE".equalsIgnoreCase(mailData.getString(base + ".type", ""));
         String clanBannerData = mailData.getString(base + ".clan-banner", "");
 
-        ItemStack item = clanInviteMail ? bannerFromSerializedData(clanBannerData) : new ItemStack(Material.PLAYER_HEAD);
+        ItemStack item = clanInviteMail ? bannerFromSerializedData(clanBannerData)
+                : new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        if (meta == null)
+            return item;
         if (clanInviteMail) {
             hideBannerTooltip(meta);
         } else if (meta instanceof SkullMeta skull) {
             try {
-                if (!fromUuidText.isBlank()) skull.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(fromUuidText)));
-                else skull.setOwningPlayer(Bukkit.getOfflinePlayer(fromName));
+                if (!fromUuidText.isBlank())
+                    skull.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(fromUuidText)));
+                else
+                    skull.setOwningPlayer(Bukkit.getOfflinePlayer(fromName));
             } catch (Throwable ignored) {
                 skull.setOwningPlayer(Bukkit.getOfflinePlayer(fromName));
             }
@@ -2742,7 +3002,8 @@ items:
         meta.setDisplayName(color((read ? "&eCarta de &f" : "&aNueva carta de &f") + fromName));
         List<String> lore = new ArrayList<>();
         lore.add(color(""));
-        if (clanInviteMail) lore.add(color("&7Tipo: &dInvitación de clan"));
+        if (clanInviteMail)
+            lore.add(color("&7Tipo: &dInvitación de clan"));
         lore.add(color("&7Enviada: &e" + formatTime(sentAt)));
         lore.add(color("&7Expira: &c" + daysLeftText(expiresAt)));
         lore.add(color(""));
@@ -2775,37 +3036,53 @@ items:
         long expiresAt = mailData.getLong(base + ".expires-at", 0L);
 
         int size = normalizeMenuSize(getConfig().getInt("mail.menus.read.size", 27));
-        String title = getConfig().getString("mail.menus.read.title", "&8Carta de {sender}").replace("{sender}", fromName);
+        String title = getConfig().getString("mail.menus.read.title", "&8Carta de {sender}").replace("{sender}",
+                fromName);
         MenuHolder holder = new MenuHolder("MAIL_READ", page);
         Inventory inv = Bukkit.createInventory(holder, size, color(title));
         holder.inventory = inv;
         fill(inv);
 
-        ItemStack letter = clanInviteMail ? bannerFromSerializedData(clanBannerData) : new ItemStack(Material.WRITTEN_BOOK);
+        ItemStack letter = clanInviteMail ? bannerFromSerializedData(clanBannerData)
+                : new ItemStack(Material.WRITTEN_BOOK);
         ItemMeta meta = letter.getItemMeta();
         if (meta != null) {
-            if (clanInviteMail) hideBannerTooltip(meta);
-            meta.setDisplayName(color((clanInviteMail ? "&d&lInvitación de clan de &f" : "&e&lCarta de &f") + fromName));
+            if (clanInviteMail)
+                hideBannerTooltip(meta);
+            meta.setDisplayName(
+                    color((clanInviteMail ? "&d&lInvitación de clan de &f" : "&e&lCarta de &f") + fromName));
             List<String> lore = new ArrayList<>();
             lore.add(color(""));
-            if (clanInviteMail) lore.add(color("&7Tipo: &dInvitación de clan"));
+            if (clanInviteMail)
+                lore.add(color("&7Tipo: &dInvitación de clan"));
             lore.add(color("&7Enviada: &e" + formatTime(sentAt)));
             lore.add(color("&7Expira: &c" + daysLeftText(expiresAt)));
             lore.add(color(""));
-            for (String line : wrapText(message, 38)) lore.add(color("&f" + line));
+            for (String line : wrapText(message, 38))
+                lore.add(color("&f" + line));
             meta.setLore(lore);
             letter.setItemMeta(meta);
         }
         inv.setItem(getConfig().getInt("mail.menus.read.letter-slot", 13), letter);
 
-        inv.setItem(getConfig().getInt("mail.menus.read.back-slot", 11), mailActionItem("items.back", "MAIL_BACK", id, fromUuid));
+        inv.setItem(getConfig().getInt("mail.menus.read.back-slot", 11),
+                mailActionItem("items.back", "MAIL_BACK", id, fromUuid));
         if (clanInviteMail) {
-            inv.setItem(getConfig().getInt("mail.menus.read.reply-slot", 14), mailActionItem("mail.items.clan-invite-accept", "ACCEPT_CLAN_INVITE", id, fromUuid, Material.LIME_DYE, "&a&lAceptar invitación", List.of("", "&7Acepta la invitación", "&7y entra al clan si hay cupo.", "", "&eClick para aceptar.")));
-            inv.setItem(getConfig().getInt("mail.menus.read.delete-slot", 15), mailActionItem("mail.items.clan-invite-reject", "REJECT_CLAN_INVITE", id, fromUuid, Material.RED_DYE, "&c&lRechazar invitación", List.of("", "&7Rechaza la invitación", "&7y elimina esta carta.", "", "&eClick para rechazar.")));
+            inv.setItem(getConfig().getInt("mail.menus.read.reply-slot", 14),
+                    mailActionItem("mail.items.clan-invite-accept", "ACCEPT_CLAN_INVITE", id, fromUuid,
+                            Material.LIME_DYE, "&a&lAceptar invitación", List.of("", "&7Acepta la invitación",
+                                    "&7y entra al clan si hay cupo.", "", "&eClick para aceptar.")));
+            inv.setItem(getConfig().getInt("mail.menus.read.delete-slot", 15), mailActionItem(
+                    "mail.items.clan-invite-reject", "REJECT_CLAN_INVITE", id, fromUuid, Material.RED_DYE,
+                    "&c&lRechazar invitación",
+                    List.of("", "&7Rechaza la invitación", "&7y elimina esta carta.", "", "&eClick para rechazar.")));
         } else {
-            inv.setItem(getConfig().getInt("mail.menus.read.reply-slot", 14), mailActionItem("mail.items.reply", "REPLY_MAIL", id, fromUuid));
-            inv.setItem(getConfig().getInt("mail.menus.read.delete-slot", 15), mailActionItem("mail.items.delete", "DELETE_MAIL", id, fromUuid));
-            inv.setItem(getConfig().getInt("mail.menus.read.block-slot", 16), mailActionItem("mail.items.block-sender", "BLOCK_MAIL_SENDER", id, fromUuid));
+            inv.setItem(getConfig().getInt("mail.menus.read.reply-slot", 14),
+                    mailActionItem("mail.items.reply", "REPLY_MAIL", id, fromUuid));
+            inv.setItem(getConfig().getInt("mail.menus.read.delete-slot", 15),
+                    mailActionItem("mail.items.delete", "DELETE_MAIL", id, fromUuid));
+            inv.setItem(getConfig().getInt("mail.menus.read.block-slot", 16),
+                    mailActionItem("mail.items.block-sender", "BLOCK_MAIL_SENDER", id, fromUuid));
         }
         player.openInventory(inv);
     }
@@ -2814,16 +3091,20 @@ items:
         return mailActionItem(path, action, mailId, senderUuid, Material.PAPER, "", List.of());
     }
 
-    private ItemStack mailActionItem(String path, String action, String mailId, String senderUuid, Material defMaterial, String defName, List<String> defLore) {
+    private ItemStack mailActionItem(String path, String action, String mailId, String senderUuid, Material defMaterial,
+            String defName, List<String> defLore) {
         ConfigurationSection sec = getConfig().getConfigurationSection(path);
         ItemStack item;
         if (sec == null) {
             item = new ItemStack(defMaterial == null ? Material.PAPER : defMaterial);
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                if (defName != null && !defName.isBlank()) meta.setDisplayName(color(defName));
-                if (defLore != null && !defLore.isEmpty()) meta.setLore(defLore.stream().map(this::color).collect(Collectors.toList()));
-                if (action != null && !action.isBlank()) meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
+                if (defName != null && !defName.isBlank())
+                    meta.setDisplayName(color(defName));
+                if (defLore != null && !defLore.isEmpty())
+                    meta.setLore(defLore.stream().map(this::color).collect(Collectors.toList()));
+                if (action != null && !action.isBlank())
+                    meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
                 item.setItemMeta(meta);
             }
         } else {
@@ -2831,8 +3112,10 @@ items:
         }
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            if (mailId != null && !mailId.isBlank()) meta.getPersistentDataContainer().set(keyMailId, PersistentDataType.STRING, mailId);
-            if (senderUuid != null && !senderUuid.isBlank()) meta.getPersistentDataContainer().set(keyMailSender, PersistentDataType.STRING, senderUuid);
+            if (mailId != null && !mailId.isBlank())
+                meta.getPersistentDataContainer().set(keyMailId, PersistentDataType.STRING, mailId);
+            if (senderUuid != null && !senderUuid.isBlank())
+                meta.getPersistentDataContainer().set(keyMailSender, PersistentDataType.STRING, senderUuid);
             item.setItemMeta(meta);
         }
         return item;
@@ -2840,14 +3123,18 @@ items:
 
     private void setTargetMenuOnItem(Inventory inv, int slot, String target) {
         ItemStack item = inv.getItem(slot);
-        if (item == null || !item.hasItemMeta()) return;
+        if (item == null || !item.hasItemMeta())
+            return;
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, target);
         item.setItemMeta(meta);
     }
 
     private void deleteMail(Player player, String id) {
-        if (!player.hasPermission("mdvsocial.mail.delete")) { msg(player, "no-permission"); return; }
+        if (!player.hasPermission("mdvsocial.mail.delete")) {
+            msg(player, "no-permission");
+            return;
+        }
         if (id == null || id.isBlank() || !mailData.contains(mailPath(player.getUniqueId(), "letters." + id))) {
             msg(player, "mail-not-found");
             return;
@@ -2858,7 +3145,8 @@ items:
     }
 
     private void deleteMailInternal(UUID owner, String id) {
-        if (owner == null || id == null || id.isBlank()) return;
+        if (owner == null || id == null || id.isBlank())
+            return;
         mailData.set(mailPath(owner, "letters." + id), null);
         saveMailData();
     }
@@ -2903,20 +3191,30 @@ items:
 
     private void blockMailByName(Player player, String targetName) {
         OfflinePlayer target = findKnownOfflinePlayer(targetName);
-        if (target == null) { sendPlayerNotFound(player, targetName); return; }
-        if (target.getUniqueId().equals(player.getUniqueId())) { msg(player, "mail-self-block"); return; }
+        if (target == null) {
+            sendPlayerNotFound(player, targetName);
+            return;
+        }
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            msg(player, "mail-self-block");
+            return;
+        }
         addBlockedMail(player.getUniqueId(), target.getUniqueId());
         msg(player, "mail-blocked", Map.of("target", target.getName() == null ? targetName : target.getName()));
     }
 
     private void unblockMailByName(Player player, String targetName) {
         OfflinePlayer target = findKnownOfflinePlayer(targetName);
-        if (target == null) { sendPlayerNotFound(player, targetName); return; }
+        if (target == null) {
+            sendPlayerNotFound(player, targetName);
+            return;
+        }
         List<String> list = new ArrayList<>(mailData.getStringList(mailPath(player.getUniqueId(), "blocked")));
         boolean removed = list.remove(target.getUniqueId().toString());
         mailData.set(mailPath(player.getUniqueId(), "blocked"), list);
         saveMailData();
-        msg(player, removed ? "mail-unblocked" : "mail-not-blocked", Map.of("target", target.getName() == null ? targetName : target.getName()));
+        msg(player, removed ? "mail-unblocked" : "mail-not-blocked",
+                Map.of("target", target.getName() == null ? targetName : target.getName()));
     }
 
     private boolean isMailBlocked(UUID recipient, UUID sender) {
@@ -2925,7 +3223,8 @@ items:
 
     private void addBlockedMail(UUID recipient, UUID sender) {
         List<String> list = new ArrayList<>(mailData.getStringList(mailPath(recipient, "blocked")));
-        if (!list.contains(sender.toString())) list.add(sender.toString());
+        if (!list.contains(sender.toString()))
+            list.add(sender.toString());
         mailData.set(mailPath(recipient, "blocked"), list);
         saveMailData();
     }
@@ -2948,9 +3247,12 @@ items:
     }
 
     private String formatTime(long millis) {
-        if (millis <= 0) return "desconocido";
+        if (millis <= 0)
+            return "desconocido";
         try {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern(getConfig().getString("mail.date-format", "dd/MM HH:mm")).withZone(ZoneId.systemDefault());
+            DateTimeFormatter fmt = DateTimeFormatter
+                    .ofPattern(getConfig().getString("mail.date-format", "dd/MM HH:mm"))
+                    .withZone(ZoneId.systemDefault());
             return fmt.format(Instant.ofEpochMilli(millis));
         } catch (Exception e) {
             return String.valueOf(millis);
@@ -2959,39 +3261,48 @@ items:
 
     private String daysLeftText(long expiresAt) {
         long diff = expiresAt - System.currentTimeMillis();
-        if (expiresAt <= 0) return getConfig().getString("mail.never-expires-text", "no expira");
-        if (diff <= 0) return "expirada";
+        if (expiresAt <= 0)
+            return getConfig().getString("mail.never-expires-text", "no expira");
+        if (diff <= 0)
+            return "expirada";
         long days = diff / (24L * 60L * 60L * 1000L);
         long hours = (diff / (60L * 60L * 1000L)) % 24L;
-        if (days > 0) return days + "d " + hours + "h";
+        if (days > 0)
+            return days + "d " + hours + "h";
         return Math.max(1, diff / (60L * 60L * 1000L)) + "h";
     }
 
     private String shorten(String text, int max) {
-        if (text == null) return "";
-        if (text.length() <= max) return text;
+        if (text == null)
+            return "";
+        if (text.length() <= max)
+            return text;
         return text.substring(0, Math.max(0, max - 3)) + "...";
     }
 
     private List<String> wrapText(String text, int maxLen) {
         List<String> lines = new ArrayList<>();
-        if (text == null || text.isBlank()) return lines;
+        if (text == null || text.isBlank())
+            return lines;
         StringBuilder line = new StringBuilder();
         for (String word : text.split(" ")) {
             if (line.length() + word.length() + 1 > maxLen) {
                 lines.add(line.toString());
                 line = new StringBuilder(word);
             } else {
-                if (line.length() > 0) line.append(' ');
+                if (line.length() > 0)
+                    line.append(' ');
                 line.append(word);
             }
         }
-        if (line.length() > 0) lines.add(line.toString());
+        if (line.length() > 0)
+            lines.add(line.toString());
         return lines;
     }
 
     private void returnToMailSessionMenu(Player player, MailComposeSession session) {
-        if (session == null) return;
+        if (session == null)
+            return;
         String menu = normalize(session.returnMenu);
         if (menu.equals("mailbox") || menu.equals("buzon")) {
             int mailboxPage = Math.max(0, session.returnPage);
@@ -3007,7 +3318,8 @@ items:
     }
 
     private void sendPlayerNotFound(Player player, String input) {
-        List<String> suggestions = similarPlayerSuggestions(input, getConfig().getInt("mail.name-suggestions-limit", 5));
+        List<String> suggestions = similarPlayerSuggestions(input,
+                getConfig().getInt("mail.name-suggestions-limit", 5));
         if (suggestions.isEmpty()) {
             msg(player, "mail-player-not-found");
         } else {
@@ -3016,39 +3328,49 @@ items:
     }
 
     private List<String> similarPlayerSuggestions(String input, int limit) {
-        if (input == null || input.isBlank()) return Collections.emptyList();
+        if (input == null || input.isBlank())
+            return Collections.emptyList();
         String raw = input.trim();
         String low = raw.toLowerCase(Locale.ROOT);
         Map<String, Integer> scores = new HashMap<>();
         for (OfflinePlayer off : Bukkit.getOfflinePlayers()) {
             String name = off.getName();
-            if (name == null || name.isBlank()) continue;
+            if (name == null || name.isBlank())
+                continue;
             String n = name.toLowerCase(Locale.ROOT);
             int score;
-            if (n.equals(low)) score = 0;
-            else if (n.startsWith(low)) score = 1;
-            else if (n.contains(low)) score = 2;
+            if (n.equals(low))
+                score = 0;
+            else if (n.startsWith(low))
+                score = 1;
+            else if (n.contains(low))
+                score = 2;
             else {
                 int dist = levenshtein(low, n);
                 int max = Math.max(2, Math.min(4, Math.max(low.length(), n.length()) / 3));
-                if (dist > max) continue;
+                if (dist > max)
+                    continue;
                 score = 10 + dist;
             }
             scores.put(name, score);
         }
         return scores.entrySet().stream()
-                .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue).thenComparing(Map.Entry::getKey))
+                .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+                        .thenComparing(Map.Entry::getKey))
                 .limit(Math.max(1, limit))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
     private int levenshtein(String a, String b) {
-        if (a == null) a = "";
-        if (b == null) b = "";
+        if (a == null)
+            a = "";
+        if (b == null)
+            b = "";
         int[] prev = new int[b.length() + 1];
         int[] curr = new int[b.length() + 1];
-        for (int j = 0; j <= b.length(); j++) prev[j] = j;
+        for (int j = 0; j <= b.length(); j++)
+            prev[j] = j;
         for (int i = 1; i <= a.length(); i++) {
             curr[0] = i;
             for (int j = 1; j <= b.length(); j++) {
@@ -3101,10 +3423,14 @@ items:
     private void openTitlesHome(Player player) {
         Inventory inv = createMenu("TITLES_HOME", getMenuSize("titles"), getMenuTitle("titles"), 0);
         fill(inv);
-        inv.setItem(getConfig().getInt("titles-menu.my-titles.slot", 10), simpleItemFromPath("titles-menu.my-titles", "OPEN_MY_TITLES"));
-        inv.setItem(getConfig().getInt("titles-menu.shop.slot", 12), simpleItemFromPath("titles-menu.shop", "OPEN_SHOP"));
-        inv.setItem(getConfig().getInt("titles-menu.locked.slot", 14), simpleItemFromPath("titles-menu.locked", "OPEN_LOCKED"));
-        inv.setItem(getConfig().getInt("titles-menu.ranks.slot", 16), simpleItemFromPath("titles-menu.ranks", "OPEN_RANKS"));
+        inv.setItem(getConfig().getInt("titles-menu.my-titles.slot", 10),
+                simpleItemFromPath("titles-menu.my-titles", "OPEN_MY_TITLES"));
+        inv.setItem(getConfig().getInt("titles-menu.shop.slot", 12),
+                simpleItemFromPath("titles-menu.shop", "OPEN_SHOP"));
+        inv.setItem(getConfig().getInt("titles-menu.locked.slot", 14),
+                simpleItemFromPath("titles-menu.locked", "OPEN_LOCKED"));
+        inv.setItem(getConfig().getInt("titles-menu.ranks.slot", 16),
+                simpleItemFromPath("titles-menu.ranks", "OPEN_RANKS"));
         int clearSlot = getConfig().getInt("titles-menu.clear.slot", 22);
         inv.setItem(clearSlot, navItem("clear-title", "CLEAR_TITLE"));
         inv.setItem(inv.getSize() - 5, navItem("back", "OPEN_MAIN"));
@@ -3132,17 +3458,21 @@ items:
         int start = page * perPage;
         for (int i = 0; i < perPage; i++) {
             int index = start + i;
-            if (index >= list.size()) break;
+            if (index >= list.size())
+                break;
             int slot = listSlots.get(i);
             if (slot >= 0 && slot < inv.getSize()) {
                 inv.setItem(slot, titleItem(player, list.get(index), type));
             }
         }
 
-        if (page > 0) inv.setItem(inv.getSize() - 9, navItem("previous-page", "PREV_PAGE"));
+        if (page > 0)
+            inv.setItem(inv.getSize() - 9, navItem("previous-page", "PREV_PAGE"));
         inv.setItem(inv.getSize() - 5, navItem("back", "OPEN_TITLES_HOME"));
-        if (page < maxPage) inv.setItem(inv.getSize() - 1, navItem("next-page", "NEXT_PAGE"));
-        else inv.setItem(inv.getSize() - 1, navItem("close", "CLOSE"));
+        if (page < maxPage)
+            inv.setItem(inv.getSize() - 1, navItem("next-page", "NEXT_PAGE"));
+        else
+            inv.setItem(inv.getSize() - 1, navItem("close", "CLOSE"));
         player.openInventory(inv);
     }
 
@@ -3158,13 +3488,17 @@ items:
         Map<Integer, RankDef> currentPage = layout.getOrDefault(page, Collections.emptyMap());
         for (Map.Entry<Integer, RankDef> entry : currentPage.entrySet()) {
             int slot = entry.getKey();
-            if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, rankItem(player, entry.getValue()));
+            if (slot >= 0 && slot < inv.getSize())
+                inv.setItem(slot, rankItem(player, entry.getValue()));
         }
 
-        if (page > 0) inv.setItem(inv.getSize() - 9, navItem("previous-page", "PREV_PAGE"));
+        if (page > 0)
+            inv.setItem(inv.getSize() - 9, navItem("previous-page", "PREV_PAGE"));
         inv.setItem(inv.getSize() - 5, navItem("back", "OPEN_TITLES_HOME"));
-        if (page < maxPage) inv.setItem(inv.getSize() - 1, navItem("next-page", "NEXT_PAGE"));
-        else inv.setItem(inv.getSize() - 1, navItem("close", "CLOSE"));
+        if (page < maxPage)
+            inv.setItem(inv.getSize() - 1, navItem("next-page", "NEXT_PAGE"));
+        else
+            inv.setItem(inv.getSize() - 1, navItem("close", "CLOSE"));
         player.openInventory(inv);
     }
 
@@ -3183,7 +3517,8 @@ items:
             int page = Math.max(0, rank.page - 1);
             Map<Integer, RankDef> pageLayout = layout.computeIfAbsent(page, ignored -> new LinkedHashMap<>());
             if (pageLayout.putIfAbsent(rank.slot, rank) != null) {
-                getLogger().warning("Dos rangos intentan usar el slot " + rank.slot + " en la página " + rank.page + ". Se conserva el primero.");
+                getLogger().warning("Dos rangos intentan usar el slot " + rank.slot + " en la página " + rank.page
+                        + ". Se conserva el primero.");
             }
         }
 
@@ -3191,7 +3526,8 @@ items:
         for (RankDef rank : automatic) {
             while (true) {
                 Map<Integer, RankDef> pageLayout = layout.computeIfAbsent(page, ignored -> new LinkedHashMap<>());
-                Integer free = listSlots.stream().filter(slot -> !pageLayout.containsKey(slot)).findFirst().orElse(null);
+                Integer free = listSlots.stream().filter(slot -> !pageLayout.containsKey(slot)).findFirst()
+                        .orElse(null);
                 if (free != null) {
                     pageLayout.put(free, rank);
                     break;
@@ -3199,7 +3535,8 @@ items:
                 page++;
             }
         }
-        if (layout.isEmpty()) layout.put(0, new LinkedHashMap<>());
+        if (layout.isEmpty())
+            layout.put(0, new LinkedHashMap<>());
         return layout;
     }
 
@@ -3212,9 +3549,12 @@ items:
 
     private int getMenuSize(String key) {
         int size = getConfig().getInt("menus." + key + ".size", 54);
-        if (size < 9) size = 9;
-        if (size > 54) size = 54;
-        if (size % 9 != 0) size = ((size / 9) + 1) * 9;
+        if (size < 9)
+            size = 9;
+        if (size > 54)
+            size = 54;
+        if (size % 9 != 0)
+            size = ((size / 9) + 1) * 9;
         return size;
     }
 
@@ -3224,12 +3564,14 @@ items:
 
     private void fill(Inventory inv) {
         ItemStack filler = itemFromSection(getConfig().getConfigurationSection("items.filler"), "", null);
-        for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, filler);
+        for (int i = 0; i < inv.getSize(); i++)
+            inv.setItem(i, filler);
     }
 
     private void placeConfiguredMainButton(Inventory inv, String path, String action) {
         int slot = getConfig().getInt(path + ".slot", -1);
-        if (slot < 0 || slot >= inv.getSize()) return;
+        if (slot < 0 || slot >= inv.getSize())
+            return;
         inv.setItem(slot, simpleItemFromPath(path, action));
     }
 
@@ -3251,10 +3593,12 @@ items:
     private ItemStack itemFromSection(ConfigurationSection sec, String action, String titleId) {
         String matName = sec != null ? sec.getString("material", "PAPER") : "PAPER";
         Material mat = Material.matchMaterial(matName == null ? "PAPER" : matName.toUpperCase(Locale.ROOT));
-        if (mat == null) mat = Material.PAPER;
+        if (mat == null)
+            mat = Material.PAPER;
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        if (meta == null)
+            return item;
 
         if (sec != null && mat == Material.PLAYER_HEAD && meta instanceof SkullMeta skull) {
             String texture = readTexture(sec);
@@ -3271,23 +3615,29 @@ items:
 
         if (sec != null) {
             String name = sec.getString("name", sec.getString("display", ""));
-            if (name != null && !name.isEmpty()) meta.setDisplayName(color(name));
+            if (name != null && !name.isEmpty())
+                meta.setDisplayName(color(name));
             List<String> lore = sec.getStringList("lore").stream().map(this::color).collect(Collectors.toList());
-            if (!lore.isEmpty()) meta.setLore(lore);
+            if (!lore.isEmpty())
+                meta.setLore(lore);
         }
-        if (action != null && !action.isEmpty()) meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
+        if (action != null && !action.isEmpty())
+            meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
         if (sec != null) {
             String sound = sec.getString("sound", sec.getString("click-sound", ""));
-            if (sound != null && !sound.isBlank()) meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, sound);
+            if (sound != null && !sound.isBlank())
+                meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, sound);
         }
-        if (titleId != null && !titleId.isEmpty()) meta.getPersistentDataContainer().set(keyTitle, PersistentDataType.STRING, titleId);
+        if (titleId != null && !titleId.isEmpty())
+            meta.getPersistentDataContainer().set(keyTitle, PersistentDataType.STRING, titleId);
         item.setItemMeta(meta);
         return item;
     }
 
     private ItemStack titleItem(Player player, TitleDef title, String menuType) {
         Material mat = Material.matchMaterial(title.material.toUpperCase(Locale.ROOT));
-        if (mat == null) mat = Material.NAME_TAG;
+        if (mat == null)
+            mat = Material.NAME_TAG;
         ItemStack item = new ItemStack(mat);
 
         if (mat == Material.PLAYER_HEAD) {
@@ -3305,7 +3655,8 @@ items:
         meta.setDisplayName(color(title.display));
         List<String> lore = new ArrayList<>();
         if (!title.lore.isEmpty()) {
-            for (String line : title.lore) lore.add(color(line));
+            for (String line : title.lore)
+                lore.add(color(line));
         }
         lore.add("");
         boolean owned = hasTitle(player, title.id);
@@ -3332,7 +3683,8 @@ items:
 
     private ItemStack rankItem(Player player, RankDef rank) {
         Material mat = Material.matchMaterial(rank.material.toUpperCase(Locale.ROOT));
-        if (mat == null) mat = Material.PAPER;
+        if (mat == null)
+            mat = Material.PAPER;
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         boolean owned = rank.permission == null || rank.permission.isBlank() || player.hasPermission(rank.permission);
@@ -3341,7 +3693,8 @@ items:
         for (String line : rank.lore) {
             lore.add(color(line.replace("{status}", owned ? "&aObtenido" : "&cNo obtenido")));
         }
-        if (lore.isEmpty()) lore.add(color(owned ? "&aObtenido" : "&cNo obtenido"));
+        if (lore.isEmpty())
+            lore.add(color(owned ? "&aObtenido" : "&cNo obtenido"));
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
@@ -3350,16 +3703,20 @@ items:
     private List<TitleDef> filteredTitles(Player player, String type) {
         List<TitleDef> out = new ArrayList<>();
         for (TitleDef title : titles.values()) {
-            if (title.punishment) continue;
-            if (isHiddenTitle(title.id)) continue;
+            if (title.punishment)
+                continue;
+            if (isHiddenTitle(title.id))
+                continue;
             boolean owned = hasTitle(player, title.id);
-            if (type.equals("MY_TITLES") && owned) out.add(title);
-            else if (type.equals("SHOP") && title.purchasable && !owned) out.add(title);
-            else if (type.equals("LOCKED") && !owned && !title.purchasable) out.add(title);
+            if (type.equals("MY_TITLES") && owned)
+                out.add(title);
+            else if (type.equals("SHOP") && title.purchasable && !owned)
+                out.add(title);
+            else if (type.equals("LOCKED") && !owned && !title.purchasable)
+                out.add(title);
         }
         return out;
     }
-
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -3367,14 +3724,16 @@ items:
         boolean firstJoin = !player.hasPlayedBefore();
 
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (!player.isOnline()) return;
+            if (!player.isOnline())
+                return;
             validateActiveTitle(player, true);
             sendWelcomeMailIfNeeded(player, firstJoin);
         }, 20L);
         Bukkit.getScheduler().runTaskLater(this, () -> validateActiveTitle(player, true), 100L);
         Bukkit.getScheduler().runTaskLater(this, () -> refreshInteractiveChatProfile(player), 40L);
 
-        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
+        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true))
+            return;
         if (getConfig().getBoolean("scoreboard-party-permission.reset-on-join", true)) {
             setScoreboardPartyPermission(player, false);
         }
@@ -3385,19 +3744,21 @@ items:
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         interactiveChatProfiles.remove(player.getUniqueId());
-        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
+        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true))
+            return;
         setScoreboardPartyPermission(player, false);
         PermissionAttachment attachment = scoreboardPartyAttachments.remove(player.getUniqueId());
         if (attachment != null) {
             try {
                 attachment.remove();
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
         }
     }
 
-
     private boolean isPlayerOptionsAlias(String raw) {
-        if (raw == null) return false;
+        if (raw == null)
+            return false;
         String value = normalize(raw);
         return value.equals("jugador") || value.equals("player") || value.equals("perfil") || value.equals("opciones");
     }
@@ -3422,59 +3783,123 @@ items:
         interactiveChatProfiles.clear();
         interactiveChatEnabled = getConfig().getBoolean("interactive-chat.enabled", true);
         interactiveHoverTemplate = List.copyOf(getConfig().getStringList("interactive-chat.hover"));
-        if (!interactiveChatEnabled) return;
+        if (!interactiveChatEnabled)
+            return;
 
         refreshAllInteractiveChatProfiles();
         long interval = Math.max(20L, getConfig().getLong("interactive-chat.profile-cache-refresh-ticks", 100L));
-        interactiveChatProfileTask = Bukkit.getScheduler().runTaskTimer(this, this::refreshAllInteractiveChatProfiles, interval, interval);
+        interactiveChatProfileTask = Bukkit.getScheduler().runTaskTimer(this, this::refreshAllInteractiveChatProfiles,
+                interval, interval);
     }
 
     private void refreshAllInteractiveChatProfiles() {
-        if (!interactiveChatEnabled) return;
-        for (Player player : Bukkit.getOnlinePlayers()) refreshInteractiveChatProfile(player);
+        if (!interactiveChatEnabled)
+            return;
+        for (Player player : Bukkit.getOnlinePlayers())
+            refreshInteractiveChatProfile(player);
         interactiveChatProfiles.keySet().removeIf(uuid -> Bukkit.getPlayer(uuid) == null);
     }
 
     private void refreshInteractiveChatProfile(Player player) {
-        if (player == null || !player.isOnline()) return;
+        if (player == null || !player.isOnline())
+            return;
         interactiveChatProfiles.put(player.getUniqueId(), buildChatProfile(player));
     }
 
-    private ChatProfileSnapshot buildChatProfile(Player player) {
-        String levelPlaceholder = getConfig().getString("interactive-chat.profile.level-placeholder", "%mmocore_level%");
-        String level = cleanProfileValue(papi(player, levelPlaceholder), "&7Desconocido");
+    private String getPlayerClan(OfflinePlayer player) {
+        String noClanText = getConfig().getString(
+                "interactive-chat.profile.no-clan-text",
+                "&8Sin clan");
 
-        String race = "";
-        List<String> racePlaceholders = getConfig().getStringList("interactive-chat.profile.race-placeholders");
-        if (racePlaceholders.isEmpty()) racePlaceholders = List.of("%mmocore_race%", "%mmocore_class%");
-        for (String placeholder : racePlaceholders) {
-            race = cleanProfileValue(papi(player, placeholder), "");
-            if (!race.isBlank()) break;
-        }
-        if (race.isBlank()) race = "&7Sin raza";
+        String clanPlaceholder = getConfig().getString(
+                "interactive-chat.profile.clan-placeholder",
+                "%mdvclans_clan_line_of_{name}%");
 
-        TitleDef equipped = getActiveTitle(player);
-        String title = equipped == null ? getConfig().getString("interactive-chat.profile.no-title-text", "&7Sin título") : equipped.display;
+        clanPlaceholder = clanPlaceholder.replace(
+                "{name}",
+                player.getName() != null ? player.getName() : "");
+
+        return cleanProfileValue(
+                papi(player, clanPlaceholder),
+                noClanText);
+    }
+
+    private ChatProfileSnapshot buildChatProfile(OfflinePlayer player) {
+        String name = player.getName() != null
+                ? player.getName()
+                : "Unknown";
+
+        String levelPlaceholder = getConfig().getString(
+                "interactive-chat.profile.level-placeholder",
+                "%mmocore_level%");
+
+        String level = cleanProfileValue(
+                papi(player, levelPlaceholder),
+                "&7Desconocido");
+
+        String race = resolvePlayerRace(player);
+
+        TitleDef equipped = player.isOnline()
+                ? getActiveTitle(player.getPlayer())
+                : getEquippedTitle(player.getUniqueId());
+
+        String title = equipped == null
+                ? getConfig().getString(
+                        "interactive-chat.profile.no-title-text",
+                        "&7Sin título")
+                : equipped.display;
+
         String rank = resolveRankDisplay(player);
 
-        String clanPlaceholder = getConfig().getString("interactive-chat.profile.clan-placeholder", "%mdvclans_clan_line%");
-        String clan = cleanProfileValue(papi(player, clanPlaceholder), getConfig().getString("interactive-chat.profile.no-clan-text", "&8Sin clan"));
+        String clan = getPlayerClan(player);
 
         return new ChatProfileSnapshot(
-                player.getName(),
+                name,
                 toAmpersand(level),
                 toAmpersand(race),
                 toAmpersand(title),
                 toAmpersand(rank),
-                toAmpersand(clan)
-        );
+                toAmpersand(clan));
     }
 
-    private ChatProfileSnapshot resolveTargetProfile(UUID targetUuid, String targetName, boolean targetOnline) {
+    private String resolvePlayerRace(OfflinePlayer player) {
+        List<String> racePlaceholders = getConfig().getStringList(
+                "interactive-chat.profile.race-placeholders");
+
+        if (racePlaceholders.isEmpty()) {
+            racePlaceholders = List.of(
+                    "%mmocore_race%",
+                    "%mmocore_class%");
+        }
+
+        for (String placeholder : racePlaceholders) {
+            String race = cleanProfileValue(
+                    papi(player, placeholder),
+                    "");
+
+            if (!race.isBlank())
+                return race;
+        }
+
+        return "&7Sin raza";
+    }
+
+    private ChatProfileSnapshot buildChatProfile(Player player) {
+        return buildChatProfile((OfflinePlayer) player);
+    }
+
+    private ChatProfileSnapshot resolveTargetProfile(
+            UUID targetUuid,
+            String targetName,
+            boolean targetOnline) {
         if (targetUuid != null) {
             ChatProfileSnapshot cached = interactiveChatProfiles.get(targetUuid);
-            if (cached != null) return cached;
+
+            if (cached != null)
+                return cached;
+
             Player online = Bukkit.getPlayer(targetUuid);
+
             if (online != null) {
                 ChatProfileSnapshot built = buildChatProfile(online);
                 interactiveChatProfiles.put(targetUuid, built);
@@ -3482,69 +3907,54 @@ items:
             }
         }
 
-        OfflinePlayer target = targetUuid == null ? Bukkit.getOfflinePlayer(targetName) : Bukkit.getOfflinePlayer(targetUuid);
-        String levelPlaceholder = getConfig().getString("interactive-chat.profile.level-placeholder", "%mmocore_level%");
-        String level = cleanProfileValue(papi(target, levelPlaceholder), "&7Desconocido");
+        OfflinePlayer target = targetUuid == null
+                ? Bukkit.getOfflinePlayer(targetName)
+                : Bukkit.getOfflinePlayer(targetUuid);
 
-        String race = "";
-        List<String> racePlaceholders = getConfig().getStringList("interactive-chat.profile.race-placeholders");
-        if (racePlaceholders.isEmpty()) racePlaceholders = List.of("%mmocore_race%", "%mmocore_class%");
-        for (String placeholder : racePlaceholders) {
-            race = cleanProfileValue(papi(target, placeholder), "");
-            if (!race.isBlank()) break;
-        }
-        if (race.isBlank()) race = "&7Sin raza";
-
-        TitleDef equipped = targetUuid == null ? null : getEquippedTitle(targetUuid);
-        String title = equipped == null ? getConfig().getString("interactive-chat.profile.no-title-text", "&7Sin título") : equipped.display;
-        String rank = resolveRankDisplay(target);
-
-        String clanPlaceholder = getConfig().getString("interactive-chat.profile.clan-placeholder", "%mdvclans_clan_line%");
-        String clan = cleanProfileValue(papi(target, clanPlaceholder), getConfig().getString("interactive-chat.profile.no-clan-text", "&8Sin clan"));
-
-        return new ChatProfileSnapshot(
-                targetName,
-                toAmpersand(level),
-                toAmpersand(race),
-                toAmpersand(title),
-                toAmpersand(rank),
-                toAmpersand(clan)
-        );
+        return buildChatProfile(target);
     }
 
     private String resolveRankDisplay(OfflinePlayer player) {
-        if (player == null) return getConfig().getString("interactive-chat.profile.no-rank-text", "&7Sin rango");
+        if (player == null)
+            return getConfig().getString("interactive-chat.profile.no-rank-text", "&7Sin rango");
 
         // Fuente principal: grupo directo de LuckPerms con mayor peso.
         // El placeholder oficial respeta el peso configurado en LuckPerms y no depende
         // del orden de permisos heredados ni del primary group manual del jugador.
-        List<String> highestWeightPlaceholders = getConfig().getStringList("interactive-chat.profile.highest-weight-group-placeholders");
+        List<String> highestWeightPlaceholders = getConfig()
+                .getStringList("interactive-chat.profile.highest-weight-group-placeholders");
         if (highestWeightPlaceholders.isEmpty()) {
             highestWeightPlaceholders = List.of("%luckperms_highest_group_by_weight%");
         }
         for (String placeholder : highestWeightPlaceholders) {
             String group = cleanProfileValue(papi(player, placeholder), "");
-            if (!group.isBlank()) return resolveLuckPermsGroupDisplay(group);
+            if (!group.isBlank())
+                return resolveLuckPermsGroupDisplay(group);
         }
 
-        // Compatibilidad para instalaciones donde el placeholder anterior no esté disponible.
-        List<String> primaryGroupPlaceholders = getConfig().getStringList("interactive-chat.profile.primary-group-placeholders");
+        // Compatibilidad para instalaciones donde el placeholder anterior no esté
+        // disponible.
+        List<String> primaryGroupPlaceholders = getConfig()
+                .getStringList("interactive-chat.profile.primary-group-placeholders");
         if (primaryGroupPlaceholders.isEmpty()) {
             primaryGroupPlaceholders = List.of("%luckperms_primary_group_name%", "%luckperms_primary_group%");
         }
         for (String placeholder : primaryGroupPlaceholders) {
             String group = cleanProfileValue(papi(player, placeholder), "");
-            if (!group.isBlank()) return resolveLuckPermsGroupDisplay(group);
+            if (!group.isBlank())
+                return resolveLuckPermsGroupDisplay(group);
         }
 
         // Último fallback para servidores sin placeholders de LuckPerms.
         Player online = player.getPlayer();
         if (online != null) {
             List<String> priority = getConfig().getStringList("interactive-chat.profile.rank-priority-fallback");
-            if (priority.isEmpty()) priority = List.of("heroe", "noble", "campeon", "caballero", "creador", "embajador", "aventurero");
+            if (priority.isEmpty())
+                priority = List.of("heroe", "noble", "campeon", "caballero", "creador", "embajador", "aventurero");
             for (String raw : priority) {
                 RankDef rank = ranks.get(normalize(raw));
-                if (rank != null && rank.permission != null && !rank.permission.isBlank() && online.hasPermission(rank.permission)) {
+                if (rank != null && rank.permission != null && !rank.permission.isBlank()
+                        && online.hasPermission(rank.permission)) {
                     return rank.display;
                 }
             }
@@ -3561,16 +3971,19 @@ items:
 
         String groupId = normalize(plain).replace('-', '_');
         String custom = getConfig().getString("interactive-chat.profile.group-display-names." + groupId, "");
-        if (custom != null && !custom.isBlank()) return custom;
+        if (custom != null && !custom.isBlank())
+            return custom;
 
         RankDef configured = ranks.get(groupId);
-        if (configured != null) return configured.display;
+        if (configured != null)
+            return configured.display;
 
         return "&f" + prettifyGroupName(plain);
     }
 
     private String prettifyGroupName(String raw) {
-        if (raw == null || raw.isBlank()) return "Sin rango";
+        if (raw == null || raw.isBlank())
+            return "Sin rango";
         String normalized = raw.trim().replace('_', ' ').replace('-', ' ');
         StringBuilder out = new StringBuilder(normalized.length());
         boolean capitalize = true;
@@ -3589,7 +4002,8 @@ items:
     }
 
     private String cleanProfileValue(String value, String fallback) {
-        if (value == null) return fallback == null ? "" : fallback;
+        if (value == null)
+            return fallback == null ? "" : fallback;
         String clean = value.trim();
         if (clean.isBlank() || clean.equalsIgnoreCase("none") || clean.equalsIgnoreCase("null")
                 || clean.equalsIgnoreCase("nomatch") || clean.equalsIgnoreCase("n/a") || clean.contains("%")) {
@@ -3616,8 +4030,7 @@ items:
                     "&7Clan: &r{clan}",
                     "",
                     "&aClic para mirar opciones",
-                    "&bShift + clic para escribirle"
-            );
+                    "&bShift + clic para escribirle");
         }
 
         String rendered = lines.stream()
@@ -3630,6 +4043,7 @@ items:
                         .replace("{title}", profile.title)
                         .replace("{clan}", profile.clan))
                 .collect(Collectors.joining("\n"));
+
         return legacyAmpersand.deserialize(rendered);
     }
 
@@ -3645,12 +4059,15 @@ items:
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInteractiveChat(AsyncChatEvent event) {
-        if (!interactiveChatEnabled) return;
+        if (!interactiveChatEnabled)
+            return;
         Player sender = event.getPlayer();
-        if (mailSessions.containsKey(sender.getUniqueId())) return;
+        if (mailSessions.containsKey(sender.getUniqueId()))
+            return;
 
         ChatProfileSnapshot profile = interactiveChatProfiles.get(sender.getUniqueId());
-        if (profile == null) return;
+        if (profile == null)
+            return;
 
         ChatRenderer previous = event.renderer();
         Component hover = buildInteractiveHover(profile);
@@ -3676,10 +4093,12 @@ items:
     }
 
     private boolean isMMOCoreFriend(Player player, UUID targetUuid) {
-        if (player == null || targetUuid == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore")) return false;
+        if (player == null || targetUuid == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore"))
+            return false;
         try {
             Object playerData = getMMOCorePlayerData(player);
-            if (playerData == null) return false;
+            if (playerData == null)
+                return false;
             Method hasFriend = playerData.getClass().getMethod("hasFriend", UUID.class);
             Object result = hasFriend.invoke(playerData, targetUuid);
             return result instanceof Boolean value && value;
@@ -3694,7 +4113,8 @@ items:
             return;
         }
         Player target = Bukkit.getPlayer(targetUuid);
-        String targetName = target != null ? target.getName() : (fallbackName == null || fallbackName.isBlank() ? "jugador" : fallbackName);
+        String targetName = target != null ? target.getName()
+                : (fallbackName == null || fallbackName.isBlank() ? "jugador" : fallbackName);
 
         if (targetUuid.equals(player.getUniqueId())) {
             msg(player, "friend-self");
@@ -3724,7 +4144,8 @@ items:
             sendFriendRequest.invoke(playerData, targetData);
             msg(player, "friend-request-sent", Map.of("target", targetName));
         } catch (Throwable ex) {
-            getLogger().warning("No se pudo enviar solicitud de amistad MMOCore: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            getLogger().warning("No se pudo enviar solicitud de amistad MMOCore: " + ex.getClass().getSimpleName()
+                    + " - " + ex.getMessage());
             msg(player, "friend-error");
         }
     }
@@ -3741,31 +4162,37 @@ items:
     }
 
     private void syncAllScoreboardPartyPermissions() {
-        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
+        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true))
+            return;
         for (Player player : Bukkit.getOnlinePlayers()) {
             syncScoreboardPartyPermission(player);
         }
     }
 
     private void resetAllScoreboardPartyPermissions() {
-        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true)) return;
+        if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true))
+            return;
         for (Player player : Bukkit.getOnlinePlayers()) {
             setScoreboardPartyPermission(player, false);
         }
     }
 
     private void syncScoreboardPartyPermission(Player player) {
-        if (player == null || !player.isOnline()) return;
+        if (player == null || !player.isOnline())
+            return;
         boolean inParty = getMMOCoreParty(player) != null;
         setScoreboardPartyPermission(player, inParty);
     }
 
     private void setScoreboardPartyPermission(Player player, boolean value) {
-        if (player == null) return;
+        if (player == null)
+            return;
         String permission = getConfig().getString("scoreboard-party-permission.permission", "animatedscoreboard.party");
-        if (permission == null || permission.isBlank()) return;
+        if (permission == null || permission.isBlank())
+            return;
 
-        PermissionAttachment attachment = scoreboardPartyAttachments.computeIfAbsent(player.getUniqueId(), id -> player.addAttachment(this));
+        PermissionAttachment attachment = scoreboardPartyAttachments.computeIfAbsent(player.getUniqueId(),
+                id -> player.addAttachment(this));
         attachment.setPermission(permission, value);
         player.recalculatePermissions();
 
@@ -3775,30 +4202,43 @@ items:
     }
 
     private boolean handleExternalFriendOptionsClick(InventoryClickEvent event, Player player) {
-        if (!getConfig().getBoolean("social-friend-options.enabled", true)) return false;
-        if (event.getClickedInventory() == null) return false;
-        if (!event.getClickedInventory().equals(event.getView().getTopInventory())) return false;
+        if (!getConfig().getBoolean("social-friend-options.enabled", true))
+            return false;
+        if (event.getClickedInventory() == null)
+            return false;
+        if (!event.getClickedInventory().equals(event.getView().getTopInventory()))
+            return false;
 
         String clickMode = getConfig().getString("social-friend-options.click", "LEFT");
-        if (!matchesConfiguredClick(event.getClick(), clickMode)) return false;
+        if (!matchesConfiguredClick(event.getClick(), clickMode))
+            return false;
 
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) return false;
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize())
+            return false;
         List<Integer> slots = getConfig().getIntegerList("social-friend-options.slots");
-        if (!slots.isEmpty() && !slots.contains(slot)) return false;
+        if (!slots.isEmpty() && !slots.contains(slot))
+            return false;
 
         String title = ChatColor.stripColor(event.getView().getTitle());
-        if (title == null) title = event.getView().getTitle();
+        if (title == null)
+            title = event.getView().getTitle();
         String normalizedTitle = title == null ? "" : title.trim().toLowerCase(Locale.ROOT);
-        String equals = ChatColor.stripColor(color(getConfig().getString("social-friend-options.title", ""))).trim().toLowerCase(Locale.ROOT);
-        String contains = ChatColor.stripColor(color(getConfig().getString("social-friend-options.title-contains", ""))).trim().toLowerCase(Locale.ROOT);
-        boolean titleMatches = (!equals.isBlank() && normalizedTitle.equals(equals)) || (!contains.isBlank() && normalizedTitle.contains(contains));
-        if (!titleMatches && equals.isBlank() && contains.isBlank()) titleMatches = true;
-        if (!titleMatches) return false;
+        String equals = ChatColor.stripColor(color(getConfig().getString("social-friend-options.title", ""))).trim()
+                .toLowerCase(Locale.ROOT);
+        String contains = ChatColor.stripColor(color(getConfig().getString("social-friend-options.title-contains", "")))
+                .trim().toLowerCase(Locale.ROOT);
+        boolean titleMatches = (!equals.isBlank() && normalizedTitle.equals(equals))
+                || (!contains.isBlank() && normalizedTitle.contains(contains));
+        if (!titleMatches && equals.isBlank() && contains.isBlank())
+            titleMatches = true;
+        if (!titleMatches)
+            return false;
 
         ItemStack clicked = event.getCurrentItem();
         UUID targetUuid = extractMMOCoreFriendUuid(clicked);
-        if (targetUuid == null) return false;
+        if (targetUuid == null)
+            return false;
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
         String targetName = target.getName() == null || target.getName().isBlank() ? "jugador" : target.getName();
@@ -3807,12 +4247,14 @@ items:
         event.setCancelled(getConfig().getBoolean("social-friend-options.cancel-event", true));
         playUiSound(player, getConfig().getString("social-friend-options.sound", "open"));
         String targetMenu = normalize(getConfig().getString("social-friend-options.target-menu", "amigo_opciones"));
-        Bukkit.getScheduler().runTask(this, () -> openCustomMenu(player, targetMenu, 1, "", 1, targetUuid, targetName, targetOnline));
+        Bukkit.getScheduler().runTask(this,
+                () -> openCustomMenu(player, targetMenu, 1, "", 1, targetUuid, targetName, targetOnline));
         return true;
     }
 
     private boolean matchesConfiguredClick(org.bukkit.event.inventory.ClickType click, String configured) {
-        String value = configured == null ? "LEFT" : configured.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        String value = configured == null ? "LEFT"
+                : configured.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
         return switch (value) {
             case "ANY", "ALL" -> true;
             case "LEFT", "LEFT_CLICK" -> click == org.bukkit.event.inventory.ClickType.LEFT;
@@ -3824,13 +4266,17 @@ items:
     }
 
     private UUID extractMMOCoreFriendUuid(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return null;
+        if (item == null || item.getType().isAir() || !item.hasItemMeta())
+            return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
         for (org.bukkit.NamespacedKey key : pdc.getKeys()) {
-            if (!key.getNamespace().equalsIgnoreCase("mmocore")) continue;
-            if (!key.getKey().equalsIgnoreCase("Uuid")) continue;
+            if (!key.getNamespace().equalsIgnoreCase("mmocore"))
+                continue;
+            if (!key.getKey().equalsIgnoreCase("Uuid"))
+                continue;
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value == null || value.isBlank()) return null;
+            if (value == null || value.isBlank())
+                return null;
             try {
                 return UUID.fromString(value);
             } catch (Exception ignored) {
@@ -3841,18 +4287,25 @@ items:
     }
 
     private boolean handleExternalGuiClick(InventoryClickEvent event, Player player) {
-        if (externalGuiActions.isEmpty()) return false;
-        if (event.getClickedInventory() == null) return false;
-        if (!event.getClickedInventory().equals(event.getView().getTopInventory())) return false;
+        if (externalGuiActions.isEmpty())
+            return false;
+        if (event.getClickedInventory() == null)
+            return false;
+        if (!event.getClickedInventory().equals(event.getView().getTopInventory()))
+            return false;
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) return false;
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize())
+            return false;
 
         String title = ChatColor.stripColor(event.getView().getTitle());
-        if (title == null) title = event.getView().getTitle();
+        if (title == null)
+            title = event.getView().getTitle();
 
         for (ExternalGuiAction def : externalGuiActions) {
-            if (!def.matches(title, slot)) continue;
-            if (def.cancelEvent) event.setCancelled(true);
+            if (!def.matches(title, slot))
+                continue;
+            if (def.cancelEvent)
+                event.setCancelled(true);
             playUiSound(player, def.sound == null || def.sound.isBlank() ? "default" : def.sound);
             runExternalGuiCommands(player, def);
             return true;
@@ -3862,74 +4315,93 @@ items:
 
     private void runExternalGuiCommands(Player player, ExternalGuiAction def) {
         Runnable task = () -> {
-            if (def.closeOnClick) player.closeInventory();
+            if (def.closeOnClick)
+                player.closeInventory();
             for (String raw : def.playerCommands) {
                 String cmd = applyPlayerPlaceholders(raw, player).trim();
-                if (cmd.isBlank()) continue;
-                if (cmd.startsWith("/")) cmd = cmd.substring(1);
+                if (cmd.isBlank())
+                    continue;
+                if (cmd.startsWith("/"))
+                    cmd = cmd.substring(1);
                 Bukkit.dispatchCommand(player, cmd);
             }
             for (String raw : def.consoleCommands) {
                 String cmd = applyPlayerPlaceholders(raw, player).trim();
-                if (cmd.isBlank()) continue;
-                if (cmd.startsWith("/")) cmd = cmd.substring(1);
+                if (cmd.isBlank())
+                    continue;
+                if (cmd.startsWith("/"))
+                    cmd = cmd.substring(1);
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
             }
         };
         Bukkit.getScheduler().runTask(this, task);
     }
 
-
     public void openSocialMenu(Player player, String menuId, int page) {
-        if (player == null) return;
+        if (player == null)
+            return;
         openRequestedSocialMenu(player, menuId, Math.max(1, page));
     }
 
     public Inventory createCoreInventory(String title, int size, boolean fillWithDefaultFiller) {
         Inventory inv = Bukkit.createInventory((InventoryHolder) null, normalizeMenuSize(size), color(title));
-        if (fillWithDefaultFiller) fill(inv);
+        if (fillWithDefaultFiller)
+            fill(inv);
         return inv;
     }
 
-    public ItemStack createCoreButton(Material material, int amount, String name, List<String> lore, String action, String targetMenu, List<String> commands, boolean closeOnClick, String sound) {
+    public ItemStack createCoreButton(Material material, int amount, String name, List<String> lore, String action,
+            String targetMenu, List<String> commands, boolean closeOnClick, String sound) {
         Material mat = material == null ? Material.PAPER : material;
         ItemStack item = new ItemStack(mat, Math.max(1, Math.min(64, amount)));
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
-        if (name != null && !name.isBlank()) meta.setDisplayName(color(name));
-        if (lore != null && !lore.isEmpty()) meta.setLore(lore.stream().map(this::color).collect(Collectors.toList()));
+        if (meta == null)
+            return item;
+        if (name != null && !name.isBlank())
+            meta.setDisplayName(color(name));
+        if (lore != null && !lore.isEmpty())
+            meta.setLore(lore.stream().map(this::color).collect(Collectors.toList()));
         String normalizedAction = normalizeAction(action);
-        if (normalizedAction != null && !normalizedAction.isBlank()) meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, normalizedAction);
+        if (normalizedAction != null && !normalizedAction.isBlank())
+            meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, normalizedAction);
         String normalizedTarget = normalize(targetMenu);
-        if (!normalizedTarget.isBlank()) meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, normalizedTarget);
-        if (commands != null && !commands.isEmpty()) meta.getPersistentDataContainer().set(keyCommands, PersistentDataType.STRING, String.join("\n", commands));
-        if (sound != null && !sound.isBlank()) meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, sound);
+        if (!normalizedTarget.isBlank())
+            meta.getPersistentDataContainer().set(keyTargetMenu, PersistentDataType.STRING, normalizedTarget);
+        if (commands != null && !commands.isEmpty())
+            meta.getPersistentDataContainer().set(keyCommands, PersistentDataType.STRING, String.join("\n", commands));
+        if (sound != null && !sound.isBlank())
+            meta.getPersistentDataContainer().set(keySound, PersistentDataType.STRING, sound);
         meta.getPersistentDataContainer().set(keyCloseOnClick, PersistentDataType.STRING, String.valueOf(closeOnClick));
         item.setItemMeta(meta);
         return item;
     }
 
     public String getCoreButtonAction(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return "";
+        if (item == null || item.getType().isAir() || !item.hasItemMeta())
+            return "";
         String action = item.getItemMeta().getPersistentDataContainer().get(keyAction, PersistentDataType.STRING);
         return action == null ? "" : action;
     }
 
     public String getCoreButtonTargetMenu(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return "";
+        if (item == null || item.getType().isAir() || !item.hasItemMeta())
+            return "";
         String target = item.getItemMeta().getPersistentDataContainer().get(keyTargetMenu, PersistentDataType.STRING);
         return target == null ? "" : target;
     }
 
     public List<String> getCoreButtonCommands(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return Collections.emptyList();
+        if (item == null || item.getType().isAir() || !item.hasItemMeta())
+            return Collections.emptyList();
         String raw = item.getItemMeta().getPersistentDataContainer().get(keyCommands, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) return Collections.emptyList();
+        if (raw == null || raw.isBlank())
+            return Collections.emptyList();
         return Arrays.asList(raw.split("\\n"));
     }
 
     public boolean coreButtonShouldCloseOnClick(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
+        if (item == null || item.getType().isAir() || !item.hasItemMeta())
+            return false;
         return shouldCloseOnClick(item.getItemMeta().getPersistentDataContainer());
     }
 
@@ -3938,30 +4410,39 @@ items:
     }
 
     private void playButtonSound(Player player, String action, PersistentDataContainer pdc) {
-        if (player == null) return;
+        if (player == null)
+            return;
         String explicit = pdc == null ? "" : pdc.get(keySound, PersistentDataType.STRING);
-        if (explicit != null && !explicit.isBlank() && playUiSoundInternal(player, explicit)) return;
-        if (action != null && !action.isBlank() && playUiSoundInternal(player, "actions." + action)) return;
+        if (explicit != null && !explicit.isBlank() && playUiSoundInternal(player, explicit))
+            return;
+        if (action != null && !action.isBlank() && playUiSoundInternal(player, "actions." + action))
+            return;
         String mapped = mapActionSound(action);
-        if (!mapped.isBlank() && playUiSoundInternal(player, mapped)) return;
+        if (!mapped.isBlank() && playUiSoundInternal(player, mapped))
+            return;
         playUiSoundInternal(player, "default");
     }
 
     public void playUiSound(Player player, String soundKey) {
-        if (player == null) return;
+        if (player == null)
+            return;
         if (!playUiSoundInternal(player, soundKey == null || soundKey.isBlank() ? "default" : soundKey)) {
             playUiSoundInternal(player, "default");
         }
     }
 
     private String mapActionSound(String action) {
-        if (action == null) return "default";
+        if (action == null)
+            return "default";
         return switch (action) {
             case "CLOSE" -> "close";
             case "BACK" -> "back";
             case "PREVIOUS_PAGE", "PREV_PAGE" -> "page";
             case "NEXT_PAGE" -> "page";
-            case "OPEN_MENU", "OPEN_CONDITIONAL_MENU", "OPEN_MAIN", "OPEN_TITLES", "OPEN_TITLES_HOME", "OPEN_MY_TITLES", "OPEN_SHOP", "OPEN_LOCKED", "OPEN_RANKS", "OPEN_MAILBOX", "READ_MAIL", "MAIL_BACK", "SUGGEST_MSG_TARGET" -> "open";
+            case "OPEN_MENU", "OPEN_CONDITIONAL_MENU", "OPEN_MAIN", "OPEN_TITLES", "OPEN_TITLES_HOME", "OPEN_MY_TITLES",
+                    "OPEN_SHOP", "OPEN_LOCKED", "OPEN_RANKS", "OPEN_MAILBOX", "READ_MAIL", "MAIL_BACK",
+                    "SUGGEST_MSG_TARGET" ->
+                "open";
             case "LOCKED_TITLE" -> "invalid";
             case "BUY_TITLE", "EQUIP_TITLE", "CLEAR_TITLE", "ACCEPT_CLAN_INVITE", "INVITE_FRIEND_TARGET" -> "confirm";
             case "DELETE_MAIL", "REJECT_CLAN_INVITE", "BLOCK_MAIL_SENDER" -> "danger";
@@ -3970,10 +4451,13 @@ items:
     }
 
     private boolean playUiSoundInternal(Player player, String keyOrSound) {
-        if (player == null || keyOrSound == null || keyOrSound.isBlank()) return false;
-        if (!getConfig().getBoolean("ui-core.sounds.enabled", true)) return true;
+        if (player == null || keyOrSound == null || keyOrSound.isBlank())
+            return false;
+        if (!getConfig().getBoolean("ui-core.sounds.enabled", true))
+            return true;
         UiSoundDef def = resolveUiSound(keyOrSound);
-        if (def == null) return false;
+        if (def == null)
+            return false;
         try {
             player.playSound(player.getLocation(), def.sound, def.volume, def.pitch);
             return true;
@@ -3984,58 +4468,75 @@ items:
 
     private UiSoundDef resolveUiSound(String keyOrSound) {
         String value = keyOrSound == null ? "" : keyOrSound.trim();
-        if (value.isBlank()) value = "default";
+        if (value.isBlank())
+            value = "default";
 
         String path = "ui-core.sounds." + value;
         UiSoundDef fromPath = soundFromConfigPath(path);
-        if (fromPath != null) return fromPath;
+        if (fromPath != null)
+            return fromPath;
 
         String normalizedKey = value.toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
         if (!normalizedKey.equals(value)) {
             fromPath = soundFromConfigPath("ui-core.sounds." + normalizedKey);
-            if (fromPath != null) return fromPath;
+            if (fromPath != null)
+                return fromPath;
         }
 
         UiSoundDef builtIn = defaultUiSound(value);
-        if (builtIn != null) return builtIn;
+        if (builtIn != null)
+            return builtIn;
 
         return soundFromInline(value);
     }
 
     private UiSoundDef defaultUiSound(String key) {
-        String value = key == null ? "default" : key.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
-        if (value.startsWith("actions.")) value = value.substring("actions.".length()).toLowerCase(Locale.ROOT);
+        String value = key == null ? "default"
+                : key.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        if (value.startsWith("actions."))
+            value = value.substring("actions.".length()).toLowerCase(Locale.ROOT);
         return switch (value) {
             case "default" -> new UiSoundDef(Sound.UI_BUTTON_CLICK, 0.6F, 1.2F);
-            case "open", "open_menu", "open_conditional_menu", "open_main", "open_titles", "open_titles_home", "open_my_titles", "open_shop", "open_locked", "open_ranks", "open_mailbox", "read_mail", "mail_back", "mdvclans_open" -> new UiSoundDef(Sound.UI_BUTTON_CLICK, 0.65F, 1.35F);
+            case "open", "open_menu", "open_conditional_menu", "open_main", "open_titles", "open_titles_home",
+                    "open_my_titles", "open_shop", "open_locked", "open_ranks", "open_mailbox", "read_mail",
+                    "mail_back", "mdvclans_open" ->
+                new UiSoundDef(Sound.UI_BUTTON_CLICK, 0.65F, 1.35F);
             case "back" -> new UiSoundDef(Sound.UI_BUTTON_CLICK, 0.55F, 0.85F);
             case "close" -> new UiSoundDef(Sound.BLOCK_CHEST_CLOSE, 0.55F, 1.15F);
-            case "page", "next_page", "previous_page", "prev_page" -> new UiSoundDef(Sound.ITEM_BOOK_PAGE_TURN, 0.7F, 1.15F);
-            case "confirm", "buy_title", "equip_title", "clear_title", "accept_clan_invite", "invite_friend_target" -> new UiSoundDef(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.65F, 1.25F);
-            case "danger", "delete_mail", "reject_clan_invite", "block_mail_sender" -> new UiSoundDef(Sound.ENTITY_VILLAGER_NO, 0.6F, 0.85F);
+            case "page", "next_page", "previous_page", "prev_page" ->
+                new UiSoundDef(Sound.ITEM_BOOK_PAGE_TURN, 0.7F, 1.15F);
+            case "confirm", "buy_title", "equip_title", "clear_title", "accept_clan_invite", "invite_friend_target" ->
+                new UiSoundDef(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.65F, 1.25F);
+            case "danger", "delete_mail", "reject_clan_invite", "block_mail_sender" ->
+                new UiSoundDef(Sound.ENTITY_VILLAGER_NO, 0.6F, 0.85F);
             case "invalid", "locked_title" -> new UiSoundDef(Sound.BLOCK_NOTE_BLOCK_BASS, 0.65F, 0.65F);
             default -> null;
         };
     }
 
     private UiSoundDef soundFromConfigPath(String path) {
-        if (path == null || path.isBlank()) return null;
+        if (path == null || path.isBlank())
+            return null;
         if (getConfig().isConfigurationSection(path)) {
             ConfigurationSection sec = getConfig().getConfigurationSection(path);
-            if (sec == null) return null;
+            if (sec == null)
+                return null;
             String sound = sec.getString("sound", sec.getString("name", ""));
             UiSoundDef def = soundFromInline(sound);
-            if (def == null) return null;
+            if (def == null)
+                return null;
             def.volume = (float) sec.getDouble("volume", def.volume);
             def.pitch = (float) sec.getDouble("pitch", def.pitch);
             return def;
         }
-        if (getConfig().isString(path)) return soundFromInline(getConfig().getString(path, ""));
+        if (getConfig().isString(path))
+            return soundFromInline(getConfig().getString(path, ""));
         return null;
     }
 
     private UiSoundDef soundFromInline(String raw) {
-        if (raw == null || raw.isBlank()) return null;
+        if (raw == null || raw.isBlank())
+            return null;
         String[] parts = raw.trim().split("[;|,]");
         String soundName = parts[0].trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
         try {
@@ -4049,13 +4550,19 @@ items:
     }
 
     private float parseFloat(String raw, float fallback) {
-        try { return Float.parseFloat(raw.trim()); } catch (Exception ignored) { return fallback; }
+        try {
+            return Float.parseFloat(raw.trim());
+        } catch (Exception ignored) {
+            return fallback;
+        }
     }
 
     private boolean evaluateMenuCondition(Player player, String placeholder, String expected) {
-        if (placeholder == null || placeholder.isBlank()) return false;
+        if (placeholder == null || placeholder.isBlank())
+            return false;
         String value = applyPlayerPlaceholders(placeholder, player);
-        if (expected == null || expected.isBlank()) expected = "true";
+        if (expected == null || expected.isBlank())
+            expected = "true";
         return value.trim().equalsIgnoreCase(expected.trim());
     }
 
@@ -4066,22 +4573,29 @@ items:
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (mmoItemsBrowserManager != null && mmoItemsBrowserManager.isBrowserInventory(event.getView().getTopInventory())) return;
+        if (!(event.getWhoClicked() instanceof Player player))
+            return;
+        if (mmoItemsBrowserManager != null
+                && mmoItemsBrowserManager.isBrowserInventory(event.getView().getTopInventory()))
+            return;
         if (!(event.getInventory().getHolder() instanceof MenuHolder holder)) {
-            if (handleExternalFriendOptionsClick(event, player)) return;
+            if (handleExternalFriendOptionsClick(event, player))
+                return;
             handleExternalGuiClick(event, player);
             return;
         }
         event.setCancelled(true);
         ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || clicked.getType().isAir() || !clicked.hasItemMeta()) return;
+        if (clicked == null || clicked.getType().isAir() || !clicked.hasItemMeta())
+            return;
         ItemMeta meta = clicked.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         boolean rightClick = event.isRightClick();
         String action = rightClick ? pdc.get(keyRightAction, PersistentDataType.STRING) : null;
-        if (action == null || action.isBlank()) action = pdc.get(keyAction, PersistentDataType.STRING);
-        if (action == null || action.isBlank()) return;
+        if (action == null || action.isBlank())
+            action = pdc.get(keyAction, PersistentDataType.STRING);
+        if (action == null || action.isBlank())
+            return;
         String requiredPermission = pdc.get(keyRequiredPermission, PersistentDataType.STRING);
         if (requiredPermission != null && !requiredPermission.isBlank() && !player.hasPermission(requiredPermission)) {
             msg(player, "no-permission");
@@ -4111,48 +4625,63 @@ items:
                 openCustomMenu(player, result ? trueMenu : falseMenu, 1, holder.menuId, holder.page);
             }
             case "MDVCLANS_OPEN" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 String clansMenu = pdc.get(keyClansMenu, PersistentDataType.STRING);
-                if (clansMenu == null || clansMenu.isBlank()) clansMenu = pdc.get(keyTargetMenu, PersistentDataType.STRING);
-                if (clansMenu == null || clansMenu.isBlank()) clansMenu = "auto";
+                if (clansMenu == null || clansMenu.isBlank())
+                    clansMenu = pdc.get(keyTargetMenu, PersistentDataType.STRING);
+                if (clansMenu == null || clansMenu.isBlank())
+                    clansMenu = "auto";
                 Bukkit.dispatchCommand(player, "clan abrir " + clansMenu);
             }
             case "BACK" -> {
-                if (holder.previousMenu != null && !holder.previousMenu.isBlank()) openCustomMenu(player, holder.previousMenu, holder.previousPage, "", 1);
-                else openSocialStart(player);
+                if (holder.previousMenu != null && !holder.previousMenu.isBlank())
+                    openCustomMenu(player, holder.previousMenu, holder.previousPage, "", 1);
+                else
+                    openSocialStart(player);
             }
             case "COMMAND_PLAYER" -> runPlayerCommandsFromPdc(player, pdc, holder, rightClick);
             case "OPEN_MAILBOX" -> openMailbox(player, 0);
             case "OPEN_MMOITEMS_BROWSER" -> {
-                if (mmoItemsBrowserManager == null) player.sendMessage(color(getPrefix() + "&cLa biblioteca de objetos no está disponible."));
-                else mmoItemsBrowserManager.open(player);
+                if (mmoItemsBrowserManager == null)
+                    player.sendMessage(color(getPrefix() + "&cLa biblioteca de objetos no está disponible."));
+                else
+                    mmoItemsBrowserManager.open(player);
             }
             case "START_MAIL_SEND" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 startMailRecipientPrompt(player, holder.menuId.isBlank() ? "correo" : holder.menuId, holder.page);
             }
             case "START_MAIL_SEND_TARGET" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
-                startMailMessagePromptToTarget(player, holder.targetUuid, holder.targetName, holder.menuId.isBlank() ? "correo" : holder.menuId, holder.page);
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
+                startMailMessagePromptToTarget(player, holder.targetUuid, holder.targetName,
+                        holder.menuId.isBlank() ? "correo" : holder.menuId, holder.page);
             }
             case "INVITE_PARTY_TARGET" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 inviteFriendToParty(player, holder.targetUuid, holder.targetName);
             }
             case "INVITE_FRIEND_TARGET" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 inviteMMOCoreFriend(player, holder.targetUuid, holder.targetName);
             }
             case "SUGGEST_MSG_TARGET" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 suggestPrivateMessage(player, holder.targetName);
             }
             case "START_MAIL_BLOCK" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 startMailBlockPrompt(player, true, holder.menuId.isBlank() ? "correo" : holder.menuId, holder.page);
             }
             case "START_MAIL_UNBLOCK" -> {
-                if (shouldCloseOnClick(pdc)) player.closeInventory();
+                if (shouldCloseOnClick(pdc))
+                    player.closeInventory();
                 startMailBlockPrompt(player, false, holder.menuId.isBlank() ? "correo" : holder.menuId, holder.page);
             }
             case "CLEAR_TITLE" -> {
@@ -4160,12 +4689,16 @@ items:
                 openTitlesHome(player);
             }
             case "PREVIOUS_PAGE", "PREV_PAGE" -> {
-                if (holder.type.equals("CUSTOM_MENU")) openCustomMenu(player, holder.menuId, holder.page - 1, holder.previousMenu, holder.previousPage);
-                else openSamePagedMenu(player, holder.type, holder.page - 1);
+                if (holder.type.equals("CUSTOM_MENU"))
+                    openCustomMenu(player, holder.menuId, holder.page - 1, holder.previousMenu, holder.previousPage);
+                else
+                    openSamePagedMenu(player, holder.type, holder.page - 1);
             }
             case "NEXT_PAGE" -> {
-                if (holder.type.equals("CUSTOM_MENU")) openCustomMenu(player, holder.menuId, holder.page + 1, holder.previousMenu, holder.previousPage);
-                else openSamePagedMenu(player, holder.type, holder.page + 1);
+                if (holder.type.equals("CUSTOM_MENU"))
+                    openCustomMenu(player, holder.menuId, holder.page + 1, holder.previousMenu, holder.previousPage);
+                else
+                    openSamePagedMenu(player, holder.type, holder.page + 1);
             }
             case "EQUIP_TITLE" -> {
                 String titleId = pdc.get(keyTitle, PersistentDataType.STRING);
@@ -4194,7 +4727,8 @@ items:
             }
             case "BLOCK_MAIL_SENDER" -> {
                 String senderUuid = pdc.get(keyMailSender, PersistentDataType.STRING);
-                if (blockMailSender(player, senderUuid)) player.closeInventory();
+                if (blockMailSender(player, senderUuid))
+                    player.closeInventory();
             }
             case "ACCEPT_CLAN_INVITE" -> {
                 String mailId = pdc.get(keyMailId, PersistentDataType.STRING);
@@ -4205,7 +4739,8 @@ items:
                 handleClanInviteMailAction(player, mailId, false, holder.page);
             }
             case "COMMANDS" -> runConfiguredCommands(player, pdc.get(keyMenu, PersistentDataType.STRING));
-            default -> { }
+            default -> {
+            }
         }
     }
 
@@ -4215,11 +4750,13 @@ items:
     }
 
     private void openSamePagedMenu(Player player, String type, int page) {
-        if (type.equals("RANKS")) openRanks(player, page);
-        else if (type.equals("MAILBOX")) openMailbox(player, page);
-        else if (type.equals("MY_TITLES") || type.equals("SHOP") || type.equals("LOCKED")) openTitleList(player, type, page);
+        if (type.equals("RANKS"))
+            openRanks(player, page);
+        else if (type.equals("MAILBOX"))
+            openMailbox(player, page);
+        else if (type.equals("MY_TITLES") || type.equals("SHOP") || type.equals("LOCKED"))
+            openTitleList(player, type, page);
     }
-
 
     private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc) {
         runPlayerCommandsFromPdc(player, pdc, null, false);
@@ -4229,35 +4766,52 @@ items:
         runPlayerCommandsFromPdc(player, pdc, holder, false);
     }
 
-    private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc, MenuHolder holder, boolean rightClick) {
+    private void runPlayerCommandsFromPdc(Player player, PersistentDataContainer pdc, MenuHolder holder,
+            boolean rightClick) {
         String raw = rightClick ? pdc.get(keyRightCommands, PersistentDataType.STRING) : null;
-        if (raw == null || raw.isBlank()) raw = pdc.get(keyCommands, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) return;
+        if (raw == null || raw.isBlank())
+            raw = pdc.get(keyCommands, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank())
+            return;
         String close = pdc.get(keyCloseOnClick, PersistentDataType.STRING);
-        if (close == null || Boolean.parseBoolean(close)) player.closeInventory();
+        if (close == null || Boolean.parseBoolean(close))
+            player.closeInventory();
         UUID targetUuid = holder == null ? readUuidFromPdc(pdc) : holder.targetUuid;
-        String targetName = holder == null ? pdc.get(keyFriendTargetName, PersistentDataType.STRING) : holder.targetName;
+        String targetName = holder == null ? pdc.get(keyFriendTargetName, PersistentDataType.STRING)
+                : holder.targetName;
         boolean targetOnline = holder != null && holder.targetOnline;
         String onlineRaw = pdc.get(keyFriendTargetOnline, PersistentDataType.STRING);
-        if (holder == null && onlineRaw != null) targetOnline = Boolean.parseBoolean(onlineRaw);
+        if (holder == null && onlineRaw != null)
+            targetOnline = Boolean.parseBoolean(onlineRaw);
         for (String line : raw.split("\\n")) {
             String cmd = applyTargetPlaceholders(line, player, targetUuid, targetName, targetOnline).trim();
-            if (cmd.isBlank()) continue;
-            if (cmd.startsWith("/")) cmd = cmd.substring(1);
+            if (cmd.isBlank())
+                continue;
+            if (cmd.startsWith("/"))
+                cmd = cmd.substring(1);
             Bukkit.dispatchCommand(player, cmd);
         }
     }
 
     private UUID readUuidFromPdc(PersistentDataContainer pdc) {
         String raw = pdc.get(keyFriendTargetUuid, PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) return null;
-        try { return UUID.fromString(raw); } catch (Exception ignored) { return null; }
+        if (raw == null || raw.isBlank())
+            return null;
+        try {
+            return UUID.fromString(raw);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private void inviteFriendToParty(Player player, UUID targetUuid, String fallbackName) {
-        if (targetUuid == null) { msg(player, "social-target-not-found"); return; }
+        if (targetUuid == null) {
+            msg(player, "social-target-not-found");
+            return;
+        }
         Player targetPlayer = Bukkit.getPlayer(targetUuid);
-        String targetName = targetPlayer != null ? targetPlayer.getName() : (fallbackName == null || fallbackName.isBlank() ? "jugador" : fallbackName);
+        String targetName = targetPlayer != null ? targetPlayer.getName()
+                : (fallbackName == null || fallbackName.isBlank() ? "jugador" : fallbackName);
         if (targetPlayer == null) {
             msg(player, "party-target-offline", Map.of("target", targetName));
             return;
@@ -4281,7 +4835,9 @@ items:
 
             if (party == null) {
                 String behavior = getConfig().getString("social-friend-options.party.when-no-party", "message");
-                if (behavior != null && (behavior.equalsIgnoreCase("create") || behavior.equalsIgnoreCase("auto-create") || behavior.equalsIgnoreCase("create-and-invite") || behavior.equalsIgnoreCase("create_and_invite"))) {
+                if (behavior != null && (behavior.equalsIgnoreCase("create") || behavior.equalsIgnoreCase("auto-create")
+                        || behavior.equalsIgnoreCase("create-and-invite")
+                        || behavior.equalsIgnoreCase("create_and_invite"))) {
                     party = createMMOCoreParty(playerData);
                     if (party != null) {
                         msg(player, "party-auto-created");
@@ -4305,7 +4861,8 @@ items:
                     msg(player, "party-target-already-member", Map.of("target", targetName));
                     return;
                 }
-            } catch (NoSuchMethodException ignored) { }
+            } catch (NoSuchMethodException ignored) {
+            }
 
             int max = Math.max(2, getConfig().getInt("social-friend-options.party.max-members", 5));
             try {
@@ -4315,7 +4872,8 @@ items:
                     msg(player, "party-full", Map.of("max", String.valueOf(max)));
                     return;
                 }
-            } catch (NoSuchMethodException ignored) { }
+            } catch (NoSuchMethodException ignored) {
+            }
 
             Method invite;
             try {
@@ -4327,7 +4885,8 @@ items:
             syncScoreboardPartyPermission(player);
             msg(player, "party-invite-sent", Map.of("target", targetName));
         } catch (Throwable ex) {
-            getLogger().warning("No se pudo invitar amigo a party: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            getLogger().warning(
+                    "No se pudo invitar amigo a party: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
             msg(player, "party-error");
         }
     }
@@ -4335,9 +4894,11 @@ items:
     private Object createMMOCoreParty(Object playerData) throws Exception {
         Class<?> mmocoreClass = Class.forName("net.Indyuce.mmocore.MMOCore");
         Object mmocore = mmocoreClass.getField("plugin").get(null);
-        if (mmocore == null) return null;
+        if (mmocore == null)
+            return null;
         Object partyModule = mmocoreClass.getField("partyModule").get(mmocore);
-        if (partyModule == null) return null;
+        if (partyModule == null)
+            return null;
         Method create = partyModule.getClass().getMethod("newRegisteredParty", playerData.getClass());
         return create.invoke(partyModule, playerData);
     }
@@ -4349,10 +4910,12 @@ items:
     }
 
     private Object getMMOCoreParty(Player player) {
-        if (player == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore")) return null;
+        if (player == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore"))
+            return null;
         try {
             Object playerData = getMMOCorePlayerData(player);
-            if (playerData == null) return null;
+            if (playerData == null)
+                return null;
             Method getParty = playerData.getClass().getMethod("getParty");
             return getParty.invoke(playerData);
         } catch (Throwable ignored) {
@@ -4365,67 +4928,80 @@ items:
     }
 
     private int countMMOCorePartyMembers(Object party) {
-        if (party == null) return 0;
+        if (party == null)
+            return 0;
         try {
             Method countMembers = party.getClass().getMethod("countMembers");
             Object count = countMembers.invoke(party);
-            if (count instanceof Number n) return Math.max(0, n.intValue());
-        } catch (Throwable ignored) { }
+            if (count instanceof Number n)
+                return Math.max(0, n.intValue());
+        } catch (Throwable ignored) {
+        }
         return getMMOCorePartyMemberNames(party).size();
     }
 
     private List<String> getMMOCorePartyMemberNames(Object party) {
-        if (party == null) return Collections.emptyList();
+        if (party == null)
+            return Collections.emptyList();
         List<?> rawMembers = Collections.emptyList();
 
-        String[] memberMethods = {"getOnlineMembers", "getMembers"};
+        String[] memberMethods = { "getOnlineMembers", "getMembers" };
         for (String methodName : memberMethods) {
             try {
                 Method method = party.getClass().getMethod(methodName);
                 Object result = method.invoke(party);
                 if (result instanceof Iterable<?> iterable) {
                     List<Object> collected = new ArrayList<>();
-                    for (Object value : iterable) collected.add(value);
+                    for (Object value : iterable)
+                        collected.add(value);
                     if (!collected.isEmpty()) {
                         rawMembers = collected;
                         break;
                     }
                 }
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
         }
 
-        if (rawMembers.isEmpty()) return Collections.emptyList();
+        if (rawMembers.isEmpty())
+            return Collections.emptyList();
         List<String> names = new ArrayList<>();
         for (Object member : rawMembers) {
             String name = getMMOCorePlayerDataName(member);
-            if (name != null && !name.isBlank()) names.add(name);
+            if (name != null && !name.isBlank())
+                names.add(name);
         }
         return names;
     }
 
     private String getMMOCorePlayerDataName(Object playerData) {
-        if (playerData == null) return null;
+        if (playerData == null)
+            return null;
 
-        String[] objectMethods = {"getPlayer", "getOfflinePlayer", "getBukkitPlayer", "getProfile"};
+        String[] objectMethods = { "getPlayer", "getOfflinePlayer", "getBukkitPlayer", "getProfile" };
         for (String methodName : objectMethods) {
             try {
                 Method method = playerData.getClass().getMethod(methodName);
                 Object value = method.invoke(playerData);
                 String name = extractPlayerLikeName(value);
-                if (name != null && !name.isBlank()) return name;
-            } catch (Throwable ignored) { }
+                if (name != null && !name.isBlank())
+                    return name;
+            } catch (Throwable ignored) {
+            }
         }
 
-        String[] stringMethods = {"getName", "getPlayerName", "getUsername"};
+        String[] stringMethods = { "getName", "getPlayerName", "getUsername" };
         for (String methodName : stringMethods) {
             try {
                 Method method = playerData.getClass().getMethod(methodName);
                 Object value = method.invoke(playerData);
-                if (value instanceof String str && !str.isBlank()) return str;
-            } catch (Throwable ignored) { }
+                if (value instanceof String str && !str.isBlank())
+                    return str;
+            } catch (Throwable ignored) {
+            }
         }
 
-        String[] uuidMethods = {"getUniqueId", "getUniqueID", "getUUID", "getUuid"};
+        String[] uuidMethods = { "getUniqueId", "getUniqueID", "getUUID", "getUuid" };
         for (String methodName : uuidMethods) {
             try {
                 Method method = playerData.getClass().getMethod(methodName);
@@ -4434,22 +5010,28 @@ items:
                     OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
                     return offline.getName() == null ? uuid.toString().substring(0, 8) : offline.getName();
                 }
-            } catch (Throwable ignored) { }
+            } catch (Throwable ignored) {
+            }
         }
 
         return null;
     }
 
     private String extractPlayerLikeName(Object value) {
-        if (value == null) return null;
-        if (value instanceof Player player) return player.getName();
-        if (value instanceof OfflinePlayer offlinePlayer) return offlinePlayer.getName();
+        if (value == null)
+            return null;
+        if (value instanceof Player player)
+            return player.getName();
+        if (value instanceof OfflinePlayer offlinePlayer)
+            return offlinePlayer.getName();
 
         try {
             Method getName = value.getClass().getMethod("getName");
             Object name = getName.invoke(value);
-            if (name instanceof String str && !str.isBlank()) return str;
-        } catch (Throwable ignored) { }
+            if (name instanceof String str && !str.isBlank())
+                return str;
+        } catch (Throwable ignored) {
+        }
 
         try {
             Method getUniqueId = value.getClass().getMethod("getUniqueId");
@@ -4458,7 +5040,8 @@ items:
                 OfflinePlayer offline = Bukkit.getOfflinePlayer(id);
                 return offline.getName() == null ? id.toString().substring(0, 8) : offline.getName();
             }
-        } catch (Throwable ignored) { }
+        } catch (Throwable ignored) {
+        }
 
         return null;
     }
@@ -4479,12 +5062,18 @@ items:
         int count = countMMOCorePartyMembers(party);
         List<String> members = getMMOCorePartyMemberNames(party);
 
-        if (key.equals("party_header")) return color("&dGrupo: &f" + count + "&7/&f" + max);
-        if (key.equals("party_count")) return String.valueOf(count);
-        if (key.equals("party_max")) return String.valueOf(max);
-        if (key.equals("party_in_group") || key.equals("party_in_party")) return "true";
-        if (key.equals("party_spacer")) return " ";
-        if (key.equals("party_members")) return members.isEmpty() ? "" : String.join(", ", members);
+        if (key.equals("party_header"))
+            return color("&dGrupo: &f" + count + "&7/&f" + max);
+        if (key.equals("party_count"))
+            return String.valueOf(count);
+        if (key.equals("party_max"))
+            return String.valueOf(max);
+        if (key.equals("party_in_group") || key.equals("party_in_party"))
+            return "true";
+        if (key.equals("party_spacer"))
+            return " ";
+        if (key.equals("party_members"))
+            return members.isEmpty() ? "" : String.join(", ", members);
 
         if (key.startsWith("party_member_")) {
             String rest = key.substring("party_member_".length());
@@ -4506,7 +5095,8 @@ items:
 
             try {
                 int index = Integer.parseInt(rest) - 1;
-                if (index < 0 || index >= members.size()) return "";
+                if (index < 0 || index >= members.size())
+                    return "";
                 String memberName = members.get(index);
 
                 return switch (mode) {
@@ -4526,7 +5116,8 @@ items:
 
     private String getPartyMemberHealthCounter(String memberName) {
         Player online = Bukkit.getPlayerExact(memberName);
-        if (online == null || !online.isOnline()) return "&8Desconectado";
+        if (online == null || !online.isOnline())
+            return "&8Desconectado";
 
         double health = Math.max(0.0D, online.getHealth());
         double maxHealth = Math.max(1.0D, online.getMaxHealth());
@@ -4537,7 +5128,8 @@ items:
 
     private String getPartyMemberHealthBar(String memberName) {
         Player online = Bukkit.getPlayerExact(memberName);
-        if (online == null || !online.isOnline()) return "&8----------";
+        if (online == null || !online.isOnline())
+            return "&8----------";
 
         double health = Math.max(0.0D, online.getHealth());
         double maxHealth = Math.max(1.0D, online.getMaxHealth());
@@ -4553,12 +5145,14 @@ items:
     }
 
     private void runConfiguredCommands(Player player, String path) {
-        if (path == null || path.isBlank()) return;
+        if (path == null || path.isBlank())
+            return;
         List<String> commands = getConfig().getStringList(path + ".commands");
         player.closeInventory();
         for (String raw : commands) {
             String cmd = raw.replace("{player}", player.getName());
-            if (cmd.startsWith("/")) cmd = cmd.substring(1);
+            if (cmd.startsWith("/"))
+                cmd = cmd.substring(1);
             Bukkit.dispatchCommand(player, cmd);
         }
     }
@@ -4636,14 +5230,16 @@ items:
 
     private void runEquipCommands(Player player, String titleId) {
         TitleDef title = titles.get(normalize(titleId));
-        if (title == null) return;
+        if (title == null)
+            return;
         for (String raw : getConfig().getStringList("settings.commands-on-title-equip")) {
             String cmd = raw
                     .replace("{player}", player.getName())
                     .replace("{title_id}", title.id)
                     .replace("{title_display}", color(title.display))
                     .replace("{title_prefix}", color(title.prefix));
-            if (cmd.startsWith("/")) cmd = cmd.substring(1);
+            if (cmd.startsWith("/"))
+                cmd = cmd.substring(1);
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
         }
     }
@@ -4651,7 +5247,8 @@ items:
     private void runClearCommands(Player player) {
         for (String raw : getConfig().getStringList("settings.commands-on-title-clear")) {
             String cmd = raw.replace("{player}", player.getName());
-            if (cmd.startsWith("/")) cmd = cmd.substring(1);
+            if (cmd.startsWith("/"))
+                cmd = cmd.substring(1);
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
         }
     }
@@ -4665,7 +5262,8 @@ items:
     }
 
     private boolean isPunishmentTitle(String titleId) {
-        if (!isPunishmentSystemEnabled()) return false;
+        if (!isPunishmentSystemEnabled())
+            return false;
         TitleDef title = titles.get(normalize(titleId));
         return title != null && title.punishment;
     }
@@ -4687,9 +5285,11 @@ items:
         }
         data.set(path(uuid, "punishment.active"), true);
         data.set(path(uuid, "punishment.title"), titleId);
-        if (target.getName() != null) data.set(path(uuid, "last-name"), target.getName());
+        if (target.getName() != null)
+            data.set(path(uuid, "last-name"), target.getName());
         saveData();
-        if (target.isOnline()) runEquipCommands(target.getPlayer(), titleId);
+        if (target.isOnline())
+            runEquipCommands(target.getPlayer(), titleId);
     }
 
     private void removePunishmentTitle(OfflinePlayer target) {
@@ -4701,7 +5301,8 @@ items:
         if (online != null && (restored.isBlank() || !titles.containsKey(restored) || !hasTitle(online, restored))) {
             restored = getInvalidTitleFallbackId();
         }
-        if (restored.isBlank()) restored = getClearTargetTitleId();
+        if (restored.isBlank())
+            restored = getClearTargetTitleId();
         setActiveTitle(uuid, restored);
         saveData();
         if (online != null) {
@@ -4712,53 +5313,69 @@ items:
 
     private String getInvalidTitleFallbackId() {
         String fallback = normalize(getConfig().getString("settings.invalid-title-fallback", "aventurero"));
-        if (titles.containsKey(fallback)) return fallback;
+        if (titles.containsKey(fallback))
+            return fallback;
         String def = getDefaultTitleId();
         return titles.containsKey(def) ? def : "";
     }
 
     private void validateActiveTitle(Player player, boolean notify) {
-        if (player == null || !player.isOnline()) return;
+        if (player == null || !player.isOnline())
+            return;
         UUID uuid = player.getUniqueId();
         if (isPunished(uuid)) {
             String punishment = getPunishmentTitleId(uuid);
-            if (isPunishmentTitle(punishment)) return;
+            if (isPunishmentTitle(punishment))
+                return;
             data.set(path(uuid, "punishment"), null);
         }
 
         String stored = getStoredActiveTitleId(uuid);
-        if (stored.isBlank()) return;
+        if (stored.isBlank())
+            return;
         TitleDef current = titles.get(stored);
-        if (current != null && hasTitle(player, stored)) return;
+        if (current != null && hasTitle(player, stored))
+            return;
 
         String fallback = getInvalidTitleFallbackId();
         if (!fallback.isBlank() && titles.containsKey(fallback)) {
             setActiveTitle(uuid, fallback);
             saveData();
             runEquipCommands(player, fallback);
-            if (notify) msg(player, "title-invalid-reset", Map.of("title", color(titles.get(fallback).display)));
+            if (notify)
+                msg(player, "title-invalid-reset", Map.of("title", color(titles.get(fallback).display)));
         } else {
             setActiveTitle(uuid, getClearTargetTitleId());
             saveData();
-            if (notify) msg(player, "title-invalid-cleared");
+            if (notify)
+                msg(player, "title-invalid-cleared");
         }
     }
 
     private void validateAllOnlineTitles() {
-        if (!getConfig().getBoolean("settings.active-title-validation.enabled", true)) return;
-        for (Player player : Bukkit.getOnlinePlayers()) validateActiveTitle(player, true);
+        if (!getConfig().getBoolean("settings.active-title-validation.enabled", true))
+            return;
+        for (Player player : Bukkit.getOnlinePlayers())
+            validateActiveTitle(player, true);
     }
 
     public boolean hasTitle(Player player, String titleId) {
         titleId = normalize(titleId);
-        if (player.hasPermission("mdvsocial.admin")) return true;
+        if (player.hasPermission("mdvsocial.admin"))
+            return true;
         TitleDef title = titles.get(titleId);
-        if (title == null) return false;
-        if (title.punishment) return false;
-        if (titleId.equals(getDefaultTitleId())) return true;
-        if (getDefaultUnlockedTitles().contains(titleId)) return true;
-        if (getUnlockedTitles(player.getUniqueId()).contains(titleId)) return true;
-        return title.unlockPermission != null && !title.unlockPermission.isBlank() && player.hasPermission(title.unlockPermission);
+        if (title == null)
+            return false;
+        if (title.punishment)
+            return false;
+        if (titleId.equals(getDefaultTitleId()))
+            return true;
+        if (getDefaultUnlockedTitles().contains(titleId))
+            return true;
+        if (getUnlockedTitles(player.getUniqueId()).contains(titleId))
+            return true;
+        return title.unlockPermission != null && !title.unlockPermission.isBlank()
+                && player.hasPermission(title.unlockPermission);
     }
 
     private void giveTitle(UUID uuid, String name, String titleId) {
@@ -4766,7 +5383,8 @@ items:
         Set<String> set = getUnlockedTitles(uuid);
         set.add(titleId);
         data.set(path(uuid, "unlocked"), new ArrayList<>(set));
-        if (name != null) data.set(path(uuid, "last-name"), name);
+        if (name != null)
+            data.set(path(uuid, "last-name"), name);
         saveData();
     }
 
@@ -4775,7 +5393,8 @@ items:
         Set<String> set = getUnlockedTitles(uuid);
         set.remove(titleId);
         data.set(path(uuid, "unlocked"), new ArrayList<>(set));
-        if (getStoredActiveTitleId(uuid).equals(titleId)) data.set(path(uuid, "active"), getInvalidTitleFallbackId());
+        if (getStoredActiveTitleId(uuid).equals(titleId))
+            data.set(path(uuid, "active"), getInvalidTitleFallbackId());
         saveData();
     }
 
@@ -4789,15 +5408,18 @@ items:
     }
 
     public String getActiveTitleId(UUID uuid) {
-        if (uuid == null) return "";
+        if (uuid == null)
+            return "";
         if (isPunished(uuid)) {
             String punishment = getPunishmentTitleId(uuid);
-            if (titles.containsKey(punishment)) return punishment;
+            if (titles.containsKey(punishment))
+                return punishment;
         }
         String active = getStoredActiveTitleId(uuid);
         if (active.isBlank() && isMandatoryTitle()) {
             String def = getDefaultTitleId();
-            if (!def.isBlank() && titles.containsKey(def)) return def;
+            if (!def.isBlank() && titles.containsKey(def))
+                return def;
         }
         return active;
     }
@@ -4807,27 +5429,37 @@ items:
     }
 
     public TitleDef getActiveTitle(Player player) {
-        if (player == null) return null;
+        if (player == null)
+            return null;
         validateActiveTitle(player, false);
         String id = getActiveTitleId(player.getUniqueId());
-        if (id.isBlank()) return null;
+        if (id.isBlank())
+            return null;
         TitleDef title = titles.get(id);
-        if (title == null) return null;
-        if (isPunished(player.getUniqueId())) return title;
-        if (getConfig().getBoolean("settings.hide-invalid-active-title", true) && !hasTitle(player, id)) return null;
+        if (title == null)
+            return null;
+        if (isPunished(player.getUniqueId()))
+            return title;
+        if (getConfig().getBoolean("settings.hide-invalid-active-title", true) && !hasTitle(player, id))
+            return null;
         return title;
     }
 
     /**
-     * API publica para otros plugins: devuelve el titulo equipado de cualquier jugador por UUID.
-     * Para jugadores offline no se revalidan permisos dinamicos, solo se lee el titulo guardado/default.
+     * API publica para otros plugins: devuelve el titulo equipado de cualquier
+     * jugador por UUID.
+     * Para jugadores offline no se revalidan permisos dinamicos, solo se lee el
+     * titulo guardado/default.
      */
     public TitleDef getEquippedTitle(UUID uuid) {
-        if (uuid == null) return null;
+        if (uuid == null)
+            return null;
         Player online = Bukkit.getPlayer(uuid);
-        if (online != null) return getActiveTitle(online);
+        if (online != null)
+            return getActiveTitle(online);
         String id = getActiveTitleId(uuid);
-        if (id.isBlank()) return null;
+        if (id.isBlank())
+            return null;
         return titles.get(id);
     }
 
@@ -4838,13 +5470,15 @@ items:
 
     public String getEquippedTitleDisplay(UUID uuid, boolean colored) {
         TitleDef title = getEquippedTitle(uuid);
-        if (title == null) return "";
+        if (title == null)
+            return "";
         return colored ? color(title.display) : stripColor(title.display);
     }
 
     public String getEquippedTitlePrefix(UUID uuid, boolean colored) {
         TitleDef title = getEquippedTitle(uuid);
-        if (title == null) return "";
+        if (title == null)
+            return "";
         return colored ? color(title.prefix) : stripColor(title.prefix);
     }
 
@@ -4868,7 +5502,8 @@ items:
     }
 
     private String getClearTargetTitleId() {
-        if (!isMandatoryTitle()) return "";
+        if (!isMandatoryTitle())
+            return "";
         String def = getDefaultTitleId();
         return titles.containsKey(def) ? def : "";
     }
@@ -4884,10 +5519,13 @@ items:
     private boolean isHiddenTitle(String titleId) {
         titleId = normalize(titleId);
         TitleDef def = titles.get(titleId);
-        if (def != null && def.hidden) return true;
-        if (getConfig().getBoolean("settings.hide-default-title-in-menus", true) && titleId.equals(getDefaultTitleId())) return true;
+        if (def != null && def.hidden)
+            return true;
+        if (getConfig().getBoolean("settings.hide-default-title-in-menus", true) && titleId.equals(getDefaultTitleId()))
+            return true;
         for (String hidden : getConfig().getStringList("settings.hidden-titles")) {
-            if (titleId.equals(normalize(hidden))) return true;
+            if (titleId.equals(normalize(hidden)))
+                return true;
         }
         return false;
     }
@@ -4897,12 +5535,14 @@ items:
     }
 
     private String normalize(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
     }
 
     private String color(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return ChatColor.translateAlternateColorCodes('&', s);
     }
 
@@ -4920,17 +5560,23 @@ items:
 
     private void msg(CommandSender sender, String key, Map<String, String> replacements) {
         String raw = getConfig().getString("messages." + key, "&cMensaje faltante: " + key);
-        for (Map.Entry<String, String> e : replacements.entrySet()) raw = raw.replace("{" + e.getKey() + "}", e.getValue());
+        for (Map.Entry<String, String> e : replacements.entrySet())
+            raw = raw.replace("{" + e.getKey() + "}", e.getValue());
         sender.sendMessage(color(getPrefix() + raw));
     }
 
     private String formatPrice(double price) {
-        if (Math.floor(price) == price) return String.valueOf((long) price);
+        if (Math.floor(price) == price)
+            return String.valueOf((long) price);
         return String.format(Locale.US, "%.2f", price);
     }
 
     private double parseDouble(String s, double def) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
+        try {
+            return Double.parseDouble(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     @Override
@@ -4943,40 +5589,51 @@ items:
                 return partial(args[0], menus);
             }
             if (args.length == 2 && isPlayerOptionsAlias(args[0])) {
-                return partial(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
+                return partial(args[1],
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
             }
             return Collections.emptyList();
         }
 
         if (commandName.equals("correo") || commandName.equals("carta")) {
-            if (args.length == 1) return partial(args[0], Arrays.asList("buzon", "enviar", "bloquear", "desbloquear", "bloqueados", "cancelar"));
-            if (args.length == 2 && Arrays.asList("enviar", "bloquear", "desbloquear").contains(args[0].toLowerCase(Locale.ROOT))) {
+            if (args.length == 1)
+                return partial(args[0],
+                        Arrays.asList("buzon", "enviar", "bloquear", "desbloquear", "bloqueados", "cancelar"));
+            if (args.length == 2
+                    && Arrays.asList("enviar", "bloquear", "desbloquear").contains(args[0].toLowerCase(Locale.ROOT))) {
                 return null;
             }
             return Collections.emptyList();
         }
 
-        if (!commandName.equals("mdvsocial")) return Collections.emptyList();
-        if (args.length == 1) return partial(args[0], Arrays.asList("reload", "open", "title", "mail", "homes"));
+        if (!commandName.equals("mdvsocial"))
+            return Collections.emptyList();
+        if (args.length == 1)
+            return partial(args[0], Arrays.asList("reload", "open", "title", "mail", "homes"));
         if (args.length == 3 && args[0].equalsIgnoreCase("open")) {
             List<String> menus = new ArrayList<>(customMenus.keySet());
             menus.addAll(Arrays.asList("main", "titulos", "mis_titulos", "tienda", "rangos"));
             return partial(args[2], menus);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("mail")) {
-            return partial(args[1], Arrays.asList("list", "view", "delete", "sendall", "sendall-days", "sendall-never", "welcome-test"));
+            return partial(args[1], Arrays.asList("list", "view", "delete", "sendall", "sendall-days", "sendall-never",
+                    "welcome-test"));
         }
         if (args.length == 2 && Arrays.asList("homes", "hogares", "casas").contains(args[0].toLowerCase(Locale.ROOT))) {
             return partial(args[1], Arrays.asList("status", "restore"));
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("title")) {
-            return partial(args[1], Arrays.asList("give", "remove", "set", "clear", "punish", "unpunish", "give-radius", "give-near"));
+            return partial(args[1],
+                    Arrays.asList("give", "remove", "set", "clear", "punish", "unpunish", "give-radius", "give-near"));
         }
-        if (args.length == 4 && args[0].equalsIgnoreCase("title") && Arrays.asList("give", "remove", "set").contains(args[1].toLowerCase(Locale.ROOT))) {
+        if (args.length == 4 && args[0].equalsIgnoreCase("title")
+                && Arrays.asList("give", "remove", "set").contains(args[1].toLowerCase(Locale.ROOT))) {
             return partial(args[3], new ArrayList<>(titles.keySet()));
         }
-        if (args.length == 4 && args[0].equalsIgnoreCase("title") && Arrays.asList("punish", "castigar").contains(args[1].toLowerCase(Locale.ROOT))) {
-            return partial(args[3], titles.values().stream().filter(t -> t.punishment).map(t -> t.id).collect(Collectors.toList()));
+        if (args.length == 4 && args[0].equalsIgnoreCase("title")
+                && Arrays.asList("punish", "castigar").contains(args[1].toLowerCase(Locale.ROOT))) {
+            return partial(args[3],
+                    titles.values().stream().filter(t -> t.punishment).map(t -> t.id).collect(Collectors.toList()));
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("title") && args[1].equalsIgnoreCase("give-radius")) {
             return partial(args[3], new ArrayList<>(titles.keySet()));
@@ -4989,14 +5646,15 @@ items:
 
     private List<String> partial(String token, List<String> values) {
         String low = token.toLowerCase(Locale.ROOT);
-        return values.stream().filter(v -> v.toLowerCase(Locale.ROOT).startsWith(low)).sorted().collect(Collectors.toList());
+        return values.stream().filter(v -> v.toLowerCase(Locale.ROOT).startsWith(low)).sorted()
+                .collect(Collectors.toList());
     }
-
 
     static final class UiSoundDef {
         final Sound sound;
         float volume;
         float pitch;
+
         UiSoundDef(Sound sound, float volume, float pitch) {
             this.sound = sound;
             this.volume = volume;
@@ -5023,7 +5681,8 @@ items:
             this(type, page, menuId, previousMenu, previousPage, null, "", false);
         }
 
-        MenuHolder(String type, int page, String menuId, String previousMenu, int previousPage, UUID targetUuid, String targetName, boolean targetOnline) {
+        MenuHolder(String type, int page, String menuId, String previousMenu, int previousPage, UUID targetUuid,
+                String targetName, boolean targetOnline) {
             this.type = type;
             this.page = page;
             this.menuId = menuId == null ? "" : menuId;
@@ -5033,6 +5692,7 @@ items:
             this.targetName = targetName == null ? "" : targetName;
             this.targetOnline = targetOnline;
         }
+
         @Override
         public Inventory getInventory() {
             return inventory;
@@ -5050,10 +5710,16 @@ items:
         final boolean cancelEvent;
         final String sound;
 
-        ExternalGuiAction(String id, String titleEquals, String titleContains, List<Integer> slots, List<String> playerCommands, List<String> consoleCommands, boolean closeOnClick, boolean cancelEvent, String sound) {
+        ExternalGuiAction(String id, String titleEquals, String titleContains, List<Integer> slots,
+                List<String> playerCommands, List<String> consoleCommands, boolean closeOnClick, boolean cancelEvent,
+                String sound) {
             this.id = id == null ? "" : id;
-            this.titleEquals = titleEquals == null ? "" : ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', titleEquals)).trim().toLowerCase(Locale.ROOT);
-            this.titleContains = titleContains == null ? "" : ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', titleContains)).trim().toLowerCase(Locale.ROOT);
+            this.titleEquals = titleEquals == null ? ""
+                    : ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', titleEquals)).trim()
+                            .toLowerCase(Locale.ROOT);
+            this.titleContains = titleContains == null ? ""
+                    : ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', titleContains)).trim()
+                            .toLowerCase(Locale.ROOT);
             this.slots = slots == null ? Collections.emptyList() : slots;
             this.playerCommands = playerCommands == null ? Collections.emptyList() : playerCommands;
             this.consoleCommands = consoleCommands == null ? Collections.emptyList() : consoleCommands;
@@ -5063,10 +5729,13 @@ items:
         }
 
         boolean matches(String rawTitle, int slot) {
-            if (!slots.contains(slot)) return false;
+            if (!slots.contains(slot))
+                return false;
             String title = rawTitle == null ? "" : rawTitle.trim().toLowerCase(Locale.ROOT);
-            if (!titleEquals.isBlank() && title.equals(titleEquals)) return true;
-            if (!titleContains.isBlank() && title.contains(titleContains)) return true;
+            if (!titleEquals.isBlank() && title.equals(titleEquals))
+                return true;
+            if (!titleContains.isBlank() && title.contains(titleContains))
+                return true;
             return titleEquals.isBlank() && titleContains.isBlank();
         }
     }
@@ -5077,14 +5746,17 @@ items:
         final int size;
         final String permission;
         final Map<Integer, List<CustomMenuItem>> pages = new HashMap<>();
+
         CustomMenuDef(String id, String title, int size, String permission) {
             this.id = id;
             this.title = title;
             this.size = size;
             this.permission = permission == null ? "" : permission.trim();
         }
+
         int maxPage() {
-            if (pages.isEmpty()) return 1;
+            if (pages.isEmpty())
+                return 1;
             return pages.keySet().stream().max(Integer::compareTo).orElse(1);
         }
     }
@@ -5115,7 +5787,12 @@ items:
         final boolean hideWithoutPermission;
         final boolean useClanBanner;
 
-        CustomMenuItem(String id, int slot, String material, int amount, String name, List<String> lore, String headOwner, String texture, String action, String rightAction, String targetMenu, List<String> commands, List<String> rightCommands, boolean closeOnClick, String visibleWhen, String conditionPlaceholder, String conditionEquals, String trueMenu, String falseMenu, String clansMenu, String sound, String permission, boolean hideWithoutPermission, boolean useClanBanner) {
+        CustomMenuItem(String id, int slot, String material, int amount, String name, List<String> lore,
+                String headOwner, String texture, String action, String rightAction, String targetMenu,
+                List<String> commands, List<String> rightCommands, boolean closeOnClick, String visibleWhen,
+                String conditionPlaceholder, String conditionEquals, String trueMenu, String falseMenu,
+                String clansMenu, String sound, String permission, boolean hideWithoutPermission,
+                boolean useClanBanner) {
             this.id = id;
             this.slot = slot;
             this.material = material == null ? "PAPER" : material;
@@ -5130,7 +5807,8 @@ items:
             this.commands = commands == null ? Collections.emptyList() : commands;
             this.rightCommands = rightCommands == null ? Collections.emptyList() : rightCommands;
             this.closeOnClick = closeOnClick;
-            this.visibleWhen = visibleWhen == null ? "always" : visibleWhen.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+            this.visibleWhen = visibleWhen == null ? "always"
+                    : visibleWhen.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
             this.conditionPlaceholder = conditionPlaceholder == null ? "" : conditionPlaceholder;
             this.conditionEquals = conditionEquals == null ? "true" : conditionEquals;
             this.trueMenu = trueMenu == null ? "" : trueMenu;
@@ -5163,7 +5841,6 @@ items:
         }
     }
 
-
     static final class ServerMailCampaign {
         final String id;
         String author;
@@ -5182,8 +5859,9 @@ items:
         }
     }
 
-
-    enum MailStage { RECIPIENT, MESSAGE, BLOCK, UNBLOCK }
+    enum MailStage {
+        RECIPIENT, MESSAGE, BLOCK, UNBLOCK
+    }
 
     static final class MailComposeSession {
         final MailStage stage;
@@ -5191,21 +5869,25 @@ items:
         final UUID targetUuid;
         final String returnMenu;
         final int returnPage;
+
         MailComposeSession(MailStage stage, String targetName) {
             this(stage, targetName, null, "correo", 1);
         }
+
         MailComposeSession(MailStage stage, String targetName, String returnMenu, int returnPage) {
             this(stage, targetName, null, returnMenu, returnPage);
         }
+
         MailComposeSession(MailStage stage, String targetName, UUID targetUuid, String returnMenu, int returnPage) {
             this.stage = stage;
             this.targetName = targetName;
             this.targetUuid = targetUuid;
             String normalizedReturnMenu = returnMenu == null ? "correo" : returnMenu;
             this.returnMenu = normalizedReturnMenu;
-            this.returnPage = normalizedReturnMenu.equalsIgnoreCase("MAILBOX") || normalizedReturnMenu.equalsIgnoreCase("buzon")
-                    ? Math.max(0, returnPage)
-                    : (returnPage <= 0 ? 1 : returnPage);
+            this.returnPage = normalizedReturnMenu.equalsIgnoreCase("MAILBOX")
+                    || normalizedReturnMenu.equalsIgnoreCase("buzon")
+                            ? Math.max(0, returnPage)
+                            : (returnPage <= 0 ? 1 : returnPage);
         }
     }
 
@@ -5242,7 +5924,9 @@ items:
         public final boolean punishment;
         public final List<String> lore;
 
-        TitleDef(String id, String display, String prefix, String material, String headOwner, String texture, boolean purchasable, double price, String unlockPermission, boolean hidden, boolean playerEquippable, boolean punishment, List<String> lore) {
+        TitleDef(String id, String display, String prefix, String material, String headOwner, String texture,
+                boolean purchasable, double price, String unlockPermission, boolean hidden, boolean playerEquippable,
+                boolean punishment, List<String> lore) {
             this.id = id;
             this.display = display;
             this.prefix = prefix;
@@ -5267,6 +5951,7 @@ items:
         final int page;
         final int slot;
         final List<String> lore;
+
         RankDef(String id, String display, String material, String permission, int page, int slot, List<String> lore) {
             this.id = id;
             this.display = display;
@@ -5280,11 +5965,30 @@ items:
 
     public static final class MDVSocialExpansion extends PlaceholderExpansion {
         private final MDVSocialPlugin plugin;
-        MDVSocialExpansion(MDVSocialPlugin plugin) { this.plugin = plugin; }
-        @Override public String getIdentifier() { return "mdvsocial"; }
-        @Override public String getAuthor() { return "MDVCRAFT"; }
-        @Override public String getVersion() { return plugin.getDescription().getVersion(); }
-        @Override public boolean persist() { return true; }
+
+        MDVSocialExpansion(MDVSocialPlugin plugin) {
+            this.plugin = plugin;
+        }
+
+        @Override
+        public String getIdentifier() {
+            return "mdvsocial";
+        }
+
+        @Override
+        public String getAuthor() {
+            return "MDVCRAFT";
+        }
+
+        @Override
+        public String getVersion() {
+            return plugin.getDescription().getVersion();
+        }
+
+        @Override
+        public boolean persist() {
+            return true;
+        }
 
         @Override
         public String onPlaceholderRequest(Player player, String params) {
@@ -5297,19 +6001,27 @@ items:
         }
 
         private String handlePlaceholder(OfflinePlayer viewer, String params) {
-            if (viewer == null || params == null) return "";
+            if (viewer == null || params == null)
+                return "";
             String p = params.toLowerCase(Locale.ROOT);
 
             UUID viewerUuid = viewer.getUniqueId();
-            TitleDef active = viewer instanceof Player online ? plugin.getActiveTitle(online) : plugin.getEquippedTitle(viewerUuid);
+            TitleDef active = viewer instanceof Player online ? plugin.getActiveTitle(online)
+                    : plugin.getEquippedTitle(viewerUuid);
 
             String targetValue;
-            if ((targetValue = afterPrefix(p, "title_of_")) != null) return plugin.getEquippedTitleDisplay(resolveTarget(targetValue), false);
-            if ((targetValue = afterPrefix(p, "title_colored_of_")) != null) return plugin.getEquippedTitleDisplay(resolveTarget(targetValue), true);
-            if ((targetValue = afterPrefix(p, "title_prefix_of_")) != null) return plugin.getEquippedTitlePrefix(resolveTarget(targetValue), true);
-            if ((targetValue = afterPrefix(p, "title_prefix_plain_of_")) != null) return plugin.getEquippedTitlePrefix(resolveTarget(targetValue), false);
-            if ((targetValue = afterPrefix(p, "title_id_of_")) != null) return plugin.getEquippedTitleId(resolveTarget(targetValue));
-            if ((targetValue = afterPrefix(p, "active_title_of_")) != null) return plugin.getEquippedTitleId(resolveTarget(targetValue));
+            if ((targetValue = afterPrefix(p, "title_of_")) != null)
+                return plugin.getEquippedTitleDisplay(resolveTarget(targetValue), false);
+            if ((targetValue = afterPrefix(p, "title_colored_of_")) != null)
+                return plugin.getEquippedTitleDisplay(resolveTarget(targetValue), true);
+            if ((targetValue = afterPrefix(p, "title_prefix_of_")) != null)
+                return plugin.getEquippedTitlePrefix(resolveTarget(targetValue), true);
+            if ((targetValue = afterPrefix(p, "title_prefix_plain_of_")) != null)
+                return plugin.getEquippedTitlePrefix(resolveTarget(targetValue), false);
+            if ((targetValue = afterPrefix(p, "title_id_of_")) != null)
+                return plugin.getEquippedTitleId(resolveTarget(targetValue));
+            if ((targetValue = afterPrefix(p, "active_title_of_")) != null)
+                return plugin.getEquippedTitleId(resolveTarget(targetValue));
 
             return switch (p) {
                 case "title" -> active == null ? "" : ChatColor.stripColor(plugin.color(active.display));
@@ -5318,9 +6030,12 @@ items:
                 case "title_prefix_plain" -> active == null ? "" : ChatColor.stripColor(plugin.color(active.prefix));
                 case "active_title", "title_id" -> active == null ? "" : active.id;
                 case "unlocked_titles" -> String.valueOf(plugin.countUnlocked(viewerUuid));
-                case "party_header", "party_count", "party_max", "party_in_group", "party_in_party", "party_spacer", "party_members" ->
-                        viewer instanceof Player online ? plugin.partyScoreboardPlaceholder(online, p) : "";
-                default -> p.startsWith("party_member_") && viewer instanceof Player online ? plugin.partyScoreboardPlaceholder(online, p) : "";
+                case "party_header", "party_count", "party_max", "party_in_group", "party_in_party", "party_spacer",
+                        "party_members" ->
+                    viewer instanceof Player online ? plugin.partyScoreboardPlaceholder(online, p) : "";
+                default -> p.startsWith("party_member_") && viewer instanceof Player online
+                        ? plugin.partyScoreboardPlaceholder(online, p)
+                        : "";
             };
         }
 
@@ -5329,9 +6044,11 @@ items:
         }
 
         private UUID resolveTarget(String token) {
-            if (token == null || token.isBlank()) return null;
+            if (token == null || token.isBlank())
+                return null;
             String raw = token.trim();
-            if (raw.startsWith("uuid_")) raw = raw.substring("uuid_".length());
+            if (raw.startsWith("uuid_"))
+                raw = raw.substring("uuid_".length());
             try {
                 return UUID.fromString(raw);
             } catch (IllegalArgumentException ignored) {
