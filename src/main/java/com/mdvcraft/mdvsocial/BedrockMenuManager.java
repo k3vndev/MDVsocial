@@ -40,11 +40,15 @@ final class BedrockMenuManager {
             "clan_sin_clan.yml",
             "warps.yml",
             "ayuda.yml",
-            "admin.yml"
+            "admin.yml",
+            "amigos_lista.yml",
+            "party.yml",
+            "homes.yml"
     );
 
     private final MDVSocialPlugin plugin;
     private final Map<String, BedrockMenuDef> menus = new LinkedHashMap<>();
+    private final Map<String, YamlConfiguration> rawMenus = new LinkedHashMap<>();
     private boolean floodgateAvailable;
 
     BedrockMenuManager(MDVSocialPlugin plugin) {
@@ -59,6 +63,7 @@ final class BedrockMenuManager {
         refreshFloodgateState();
         ensureDefaultMenus();
         menus.clear();
+        rawMenus.clear();
 
         File folder = new File(plugin.getDataFolder(), "MenusBedrock");
         if (!folder.exists() && !folder.mkdirs()) {
@@ -79,6 +84,7 @@ final class BedrockMenuManager {
             String id = normalize(dot > 0 ? name.substring(0, dot) : name);
             try {
                 YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+                rawMenus.put(id, yaml);
                 menus.put(id, parseMenu(id, yaml));
             } catch (Throwable ex) {
                 plugin.getLogger().warning("No se pudo cargar menu Bedrock " + name + ": " + ex.getMessage());
@@ -109,6 +115,10 @@ final class BedrockMenuManager {
 
     boolean hasMenu(String menuId) {
         return menus.containsKey(normalize(menuId));
+    }
+
+    YamlConfiguration rawMenu(String menuId) {
+        return rawMenus.get(normalize(menuId));
     }
 
     boolean open(Player player, String rawMenuId, int page, String previousMenu, int previousPage,

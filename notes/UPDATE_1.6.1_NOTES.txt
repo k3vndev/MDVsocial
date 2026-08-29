@@ -1,0 +1,33 @@
+MDVSocial 1.6.1 - Bedrock Social Forms
+======================================
+
+NUEVO - MENUS BEDROCK EDITABLES
+- MenusBedrock/amigos_lista.yml
+  * Lista dinamica de amigos configurable.
+  * Boton Añadir amigo abre CustomForm con nombre de jugador.
+  * Boton Solicitudes muestra solicitudes FriendRequest pendientes de MMOCore.
+  * Aceptar/rechazar solicitudes sin depender de clicks de chat.
+
+- MenusBedrock/party.yml
+  * Menu Grupo de Aventura configurable.
+  * Crear party.
+  * Invitar por nombre con CustomForm.
+  * Invitar desde la lista de amigos.
+  * Ver/aceptar/rechazar PartyInvite pendientes de MMOCore.
+
+- MenusBedrock/homes.yml
+  * Menu de hogares Bedrock configurable.
+  * Plantillas para hogar, crear, suspendido, acciones y confirmacion de borrado.
+  * /home sin argumentos abre el Form de hogares solo para Bedrock.
+  * Java conserva su comportamiento anterior.
+
+MMOCORE
+- MDVSocial sigue usando MMOCore como backend real para amigos y party.
+- Las solicitudes pendientes se leen del RequestManager de MMOCore y se resuelven
+  llamando accept()/deny(), por lo que no se crea un segundo sistema social.
+
+ACTUALIZACION
+- Reemplazar el JAR por la nueva version y reiniciar.
+- Los tres YAML nuevos se copian automaticamente si no existen.
+- Los MenusBedrock ya existentes NO se sobrescriben.
+- /mdvsocial reload vuelve a cargar los YAML.

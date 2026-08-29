@@ -1,0 +1,63 @@
+type: "DYNAMIC_PARTY"
+title: "&d&lGrupo de Aventura"
+content-no-party:
+  - "&7No perteneces a un Grupo de Aventura."
+  - "&7Puedes crear uno o aceptar una invitación."
+  - "&7Invitaciones pendientes: &e{request_count}"
+content-party:
+  - "&7Integrantes: &f{member_count}&7/&f{max_members}"
+  - "&7Invitaciones pendientes: &e{request_count}"
+member-line: "&7• &f{member_name}"
+
+buttons:
+  create:
+    enabled: true
+    text: "&a&lCrear Grupo de Aventura\n&r&8Crea una nueva party."
+    image:
+      type: "URL"
+      data: ""
+  invite:
+    enabled: true
+    text: "&d&lInvitar jugador\n&r&8Escribe el nombre del jugador."
+    image:
+      type: "URL"
+      data: ""
+  invite-friends:
+    enabled: true
+    text: "&aInvitar desde Amigos\n&r&8Abre tu lista de amigos."
+    image:
+      type: "URL"
+      data: ""
+  requests:
+    enabled: true
+    text: "&e&lInvitaciones ({request_count})\n&r&8Acepta o rechaza invitaciones."
+    image:
+      type: "URL"
+      data: ""
+  back:
+    text: "&6Volver"
+  close:
+    text: "&cCerrar"
+
+invite-form:
+  title: "&d&lInvitar al Grupo"
+  input-label: "&eNombre del jugador"
+  input-placeholder: "Escribe el nombre..."
+
+requests-menu:
+  title: "&e&lInvitaciones a Grupos"
+  content: "&7Invitaciones pendientes: &f{request_count}"
+  empty: "&7No tienes invitaciones de grupo pendientes."
+  request:
+    text: "&d{creator}\n&r&8Toca para responder."
+    image:
+      type: "URL"
+      data: ""
+  back: "&6Volver al Grupo"
+  close: "&cCerrar"
+  detail:
+    title: "&d&lInvitación de {creator}"
+    content: "&7¿Quieres unirte al Grupo de Aventura de &f{creator}&7?"
+    accept: "&aAceptar invitación"
+    deny: "&cRechazar invitación"
+    back: "&6Volver"

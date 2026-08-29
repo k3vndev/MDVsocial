@@ -33,6 +33,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.cumulus.util.FormImage;
 import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.io.File;
@@ -251,14 +252,21 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
         List<HomeData> displayed = homes.stream()
                 .map(home -> home.withLocked(lockedNames.contains(normalizeHomeName(home.name))))
                 .collect(Collectors.toCollection(ArrayList::new));
+        YamlConfiguration ui = bedrockHomesUi();
 
-        StringBuilder content = new StringBuilder(color("&7Hogares: &f" + homes.size() + "&7/&f" + maxHomes));
-        if (lockExcessEnabled && displayed.stream().anyMatch(home -> home.locked))
-            content.append("\n").append(color("&cAlgunos hogares están suspendidos por tu límite actual."));
+        boolean hasLocked = lockExcessEnabled && displayed.stream().anyMatch(home -> home.locked);
+        String lockWarning = hasLocked
+                ? bedrockHomeText(ui, "lock-warning", "&cAlgunos hogares están suspendidos por tu límite actual.",
+                        player, null, 0, displayed, maxHomes)
+                : "";
+        String content = bedrockHomeLines(ui, "content",
+                List.of("&7Hogares: &f{home_count}&7/&f{max_homes}", "{lock_warning}"),
+                player, null, 0, displayed, maxHomes)
+                .replace("{lock_warning}", lockWarning);
 
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(color(applyGlobalPlaceholders(title, player, displayed, maxHomes)))
-                .content(content.toString());
+                .title(bedrockHomeText(ui, "title", title, player, null, 0, displayed, maxHomes))
+                .content(content);
         List<Runnable> actions = new ArrayList<>();
 
         int totalSlots = Math.max(maxVisibleHomes, Math.min(displayed.size(), 9));
@@ -267,12 +275,17 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
             boolean withinLimit = i <= maxHomes;
             if (home == null) {
                 String generated = generateHomeName(i);
+                HomeData missing = HomeData.missing(generated);
                 if (withinLimit) {
-                    builder.button(color("&aCrear &f" + generated + "\n&7Guardar ubicación actual"));
+                    addBedrockHomeButton(builder, ui, "buttons.create",
+                            bedrockHomeText(ui, "buttons.create.text", "&aCrear &f{home_name}\n&7Guardar ubicación actual",
+                                    player, missing, i, displayed, maxHomes));
                     int number = i;
                     actions.add(() -> runHomeCommand(player, setCommand, generated, number, true));
                 } else {
-                    builder.button(color("&8🔒 Espacio " + i + " bloqueado\n&7Aumenta tu límite de hogares"));
+                    addBedrockHomeButton(builder, ui, "buttons.locked-slot",
+                            bedrockHomeText(ui, "buttons.locked-slot.text", "&8Espacio {home_number} bloqueado\n&7Aumenta tu límite de hogares",
+                                    player, missing.withLocked(true), i, displayed, maxHomes));
                     actions.add(() -> openBedrockHomesMenu(player));
                 }
                 continue;
@@ -280,19 +293,29 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
 
             int number = i;
             if (home.locked) {
-                builder.button(color("&c🔒 " + home.name + "\n&7Hogar suspendido"));
-                actions.add(() -> openBedrockLockedHome(player, home, number));
+                addBedrockHomeButton(builder, ui, "buttons.locked-home",
+                        bedrockHomeText(ui, "buttons.locked-home.text", "&c{home_name}\n&7Hogar suspendido",
+                                player, home, i, displayed, maxHomes));
+                HomeData selected = home;
+                actions.add(() -> openBedrockLockedHome(player, selected, number));
             } else {
-                builder.button(color("&6🏠 " + home.name + "\n&7" + home.world + "  "
-                        + Math.round(home.x) + ", " + Math.round(home.y) + ", " + Math.round(home.z)));
-                actions.add(() -> openBedrockHomeActions(player, home, number));
+                addBedrockHomeButton(builder, ui, "buttons.home",
+                        bedrockHomeText(ui, "buttons.home.text", "&6{home_name}\n&7{home_world} {home_x}, {home_y}, {home_z}",
+                                player, home, i, displayed, maxHomes));
+                HomeData selected = home;
+                actions.add(() -> openBedrockHomeActions(player, selected, number));
             }
         }
 
-        builder.button(color("&6Volver a MDVSocial"));
+        addBedrockHomeButton(builder, ui, "buttons.back",
+                bedrockHomeText(ui, "buttons.back.text", "&6Volver a MDVSocial",
+                        player, null, 0, displayed, maxHomes));
         actions.add(() -> Bukkit.dispatchCommand(player, "social"));
-        builder.button(color("&cCerrar"));
+        addBedrockHomeButton(builder, ui, "buttons.close",
+                bedrockHomeText(ui, "buttons.close.text", "&cCerrar",
+                        player, null, 0, displayed, maxHomes));
         actions.add(() -> { });
+
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
@@ -302,16 +325,22 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
     }
 
     private void openBedrockHomeActions(Player player, HomeData home, int number) {
+        List<HomeData> homes = readHomes(player);
+        int maxHomes = getMaxHomes(player);
+        YamlConfiguration ui = bedrockHomesUi();
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(color("&6&l" + home.name))
-                .content(color("&7Mundo: &f" + home.world
-                        + "\n&7X: &f" + Math.round(home.x)
-                        + "  &7Y: &f" + Math.round(home.y)
-                        + "  &7Z: &f" + Math.round(home.z)))
-                .button(color("&aTeletransportarse"))
-                .button(color("&eActualizar ubicación"))
-                .button(color("&cEliminar hogar"))
-                .button(color("&6Volver"));
+                .title(bedrockHomeText(ui, "home-actions.title", "&6&l{home_name}", player, home, number, homes, maxHomes))
+                .content(bedrockHomeLines(ui, "home-actions.content",
+                        List.of("&7Mundo: &f{home_world}", "&7X: &f{home_x}  &7Y: &f{home_y}  &7Z: &f{home_z}"),
+                        player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "home-actions.teleport",
+                bedrockHomeText(ui, "home-actions.teleport", "&aTeletransportarse", player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "home-actions.update",
+                bedrockHomeText(ui, "home-actions.update", "&eActualizar ubicación", player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "home-actions.delete",
+                bedrockHomeText(ui, "home-actions.delete", "&cEliminar hogar", player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "home-actions.back",
+                bedrockHomeText(ui, "home-actions.back", "&6Volver", player, home, number, homes, maxHomes));
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             switch (response.clickedButtonId()) {
                 case 0 -> runHomeCommand(player, teleportCommand, home.name, number, true);
@@ -324,16 +353,23 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
     }
 
     private void openBedrockLockedHome(Player player, HomeData home, int number) {
+        List<HomeData> homes = readHomes(player);
+        int maxHomes = getMaxHomes(player);
+        YamlConfiguration ui = bedrockHomesUi();
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(color("&c&lHogar suspendido"))
-                .content(color("&7" + home.name + " está guardado pero supera tu límite actual."
-                        + "\n&7No puedes teletransportarte hasta recuperar un espacio."));
+                .title(bedrockHomeText(ui, "locked-menu.title", "&c&lHogar suspendido", player, home, number, homes, maxHomes))
+                .content(bedrockHomeLines(ui, "locked-menu.content",
+                        List.of("&7{home_name} está guardado pero supera tu límite actual.",
+                                "&7No puedes teletransportarte hasta recuperar un espacio."),
+                        player, home, number, homes, maxHomes));
         List<Runnable> actions = new ArrayList<>();
         if (allowDeleteLocked) {
-            builder.button(color("&cEliminar hogar suspendido"));
+            addBedrockHomeButton(builder, ui, "locked-menu.delete",
+                    bedrockHomeText(ui, "locked-menu.delete", "&cEliminar hogar suspendido", player, home, number, homes, maxHomes));
             actions.add(() -> confirmBedrockDeleteHome(player, home, number));
         }
-        builder.button(color("&6Volver"));
+        addBedrockHomeButton(builder, ui, "locked-menu.back",
+                bedrockHomeText(ui, "locked-menu.back", "&6Volver", player, home, number, homes, maxHomes));
         actions.add(() -> openBedrockHomesMenu(player));
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();
@@ -344,11 +380,17 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
     }
 
     private void confirmBedrockDeleteHome(Player player, HomeData home, int number) {
+        List<HomeData> homes = readHomes(player);
+        int maxHomes = getMaxHomes(player);
+        YamlConfiguration ui = bedrockHomesUi();
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(color("&c&lEliminar " + home.name))
-                .content(color("&7Esta acción elimina el hogar de EssentialsX. ¿Continuar?"))
-                .button(color("&cSí, eliminar"))
-                .button(color("&aNo, volver"));
+                .title(bedrockHomeText(ui, "delete-confirm.title", "&c&lEliminar {home_name}", player, home, number, homes, maxHomes))
+                .content(bedrockHomeText(ui, "delete-confirm.content",
+                        "&7Esta acción elimina el hogar de EssentialsX. ¿Continuar?", player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "delete-confirm.confirm",
+                bedrockHomeText(ui, "delete-confirm.confirm", "&cSí, eliminar", player, home, number, homes, maxHomes));
+        addBedrockHomeButton(builder, ui, "delete-confirm.cancel",
+                bedrockHomeText(ui, "delete-confirm.cancel", "&aNo, volver", player, home, number, homes, maxHomes));
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             if (response.clickedButtonId() == 0)
                 runHomeCommand(player, deleteCommand, home.name, number, true);
@@ -356,6 +398,46 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
                 openBedrockHomesMenu(player);
         }));
         sendBedrockForm(player, builder);
+    }
+
+    private YamlConfiguration bedrockHomesUi() {
+        YamlConfiguration config = plugin.getBedrockMenuConfig("homes");
+        return config == null ? new YamlConfiguration() : config;
+    }
+
+    private String bedrockHomeLines(YamlConfiguration ui, String path, List<String> defaults,
+                                    Player player, HomeData home, int number, List<HomeData> homes, int maxHomes) {
+        List<String> lines = ui.getStringList(path);
+        if (lines.isEmpty()) lines = defaults;
+        StringBuilder out = new StringBuilder();
+        for (String line : lines) {
+            if (out.length() > 0) out.append('\n');
+            out.append(bedrockHomeRaw(line, player, home, number, homes, maxHomes));
+        }
+        return out.toString();
+    }
+
+    private String bedrockHomeText(YamlConfiguration ui, String path, String def,
+                                   Player player, HomeData home, int number, List<HomeData> homes, int maxHomes) {
+        return bedrockHomeRaw(ui.getString(path, def), player, home, number, homes, maxHomes);
+    }
+
+    private String bedrockHomeRaw(String raw, Player player, HomeData home, int number,
+                                  List<HomeData> homes, int maxHomes) {
+        String text = home == null
+                ? applyGlobalPlaceholders(raw, player, homes, maxHomes)
+                : applyPlaceholders(raw, player, home, number, homes, maxHomes);
+        return color(text);
+    }
+
+    private void addBedrockHomeButton(SimpleForm.Builder builder, YamlConfiguration ui, String path, String text) {
+        String data = ui.getString(path + ".image.data", "");
+        if (data == null || data.isBlank()) {
+            builder.button(text);
+            return;
+        }
+        String type = ui.getString(path + ".image.type", "URL");
+        builder.button(text, "PATH".equalsIgnoreCase(type) ? FormImage.Type.PATH : FormImage.Type.URL, data);
     }
 
     private boolean sendBedrockForm(Player player, SimpleForm.Builder builder) {
@@ -432,10 +514,7 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onHomeCommand(PlayerCommandPreprocessEvent event) {
-        if (!isLockExcessActive()) return;
         Player player = event.getPlayer();
-        if (hasLockBypass(player)) return;
-
         String raw = event.getMessage();
         if (raw == null || raw.length() < 2) return;
         String withoutSlash = raw.substring(1).trim();
@@ -444,10 +523,21 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
         String label = normalizeCommandLabel(parts[0]);
         if (!interceptedHomeCommands.contains(label)) return;
 
+        // Bedrock: /home sin argumentos abre siempre el Form nativo de MDVSocial.
+        // Esto no cambia el comportamiento de /home <nombre>, ni el de jugadores Java.
+        if ((parts.length == 1 || parts[1].isBlank()) && plugin.isBedrockPlayer(player)) {
+            event.setCancelled(true);
+            Bukkit.getScheduler().runTask(plugin, () -> openBedrockHomesMenu(player));
+            return;
+        }
+
+        if (!isLockExcessActive()) return;
+        if (hasLockBypass(player)) return;
+
         List<HomeData> homes = readHomes(player);
         int maxHomes = getMaxHomes(player);
         Set<String> locked = syncLockedHomes(player, homes, maxHomes);
-        if (homes.isEmpty()) return; // Conserva spawn-if-no-home de EssentialsX.
+        if (homes.isEmpty()) return; // Conserva spawn-if-no-home de EssentialsX para Java.
 
         if (parts.length == 1 || parts[1].isBlank()) {
             HomeData firstActive = homes.stream()

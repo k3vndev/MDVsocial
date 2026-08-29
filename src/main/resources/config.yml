@@ -75,6 +75,14 @@ messages:
   friend-already: '&e{target} &aya forma parte de tu lista de amigos.'
   friend-request-sent: '&aSolicitud de amistad enviada a &e{target}&a.'
   friend-error: '&cNo se pudo enviar la solicitud de amistad.'
+  friend-target-not-found: '&cEse jugador no está conectado o el nombre no es válido.'
+  friend-request-accepted: '&aAceptaste la solicitud de amistad de &e{target}&a.'
+  friend-request-denied: '&eRechazaste la solicitud de amistad de &c{target}&e.'
+  party-target-not-found: '&cEse jugador no está conectado o el nombre no es válido.'
+  party-request-accepted: '&aAceptaste la invitación al grupo de &e{target}&a.'
+  party-request-denied: '&eRechazaste la invitación al grupo de &c{target}&e.'
+  social-request-expired: '&cEsa solicitud ya expiró.'
+  social-request-error: '&cNo se pudo procesar esa solicitud de MMOCore.'
   private-message-suggest: '&bHaz clic aquí para escribirle a &e{target}&b.'
 settings:
   # Menu inicial que abre /social.

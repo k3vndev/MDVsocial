@@ -1,0 +1,16 @@
+INSTALACION MDVSocial 1.6.1
+===========================
+1. Compila el source con GitHub Actions/Maven y reemplaza el JAR anterior.
+2. Reinicia completamente el servidor.
+3. NO borres player-data.yml, mail-data.yml, homes-lock-data.yml ni tus Menus actuales.
+4. Si faltan, MDVSocial creará automáticamente:
+   - MenusBedrock/amigos_lista.yml
+   - MenusBedrock/party.yml
+   - MenusBedrock/homes.yml
+5. Tus MenusBedrock existentes no se reemplazan.
+6. Puedes editar esos tres YAML y ejecutar /mdvsocial reload.
+
+BEDROCK
+- /home sin argumentos abre homes.yml.
+- Lista de Amigos usa amigos_lista.yml.
+- Grupo de Aventura usa party.yml.

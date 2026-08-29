@@ -1,0 +1,53 @@
+type: "DYNAMIC_HOMES"
+title: "&6&lTus Hogares"
+content:
+  - "&7Hogares: &f{home_count}&7/&f{max_homes}"
+  - "{lock_warning}"
+lock-warning: "&cAlgunos hogares están suspendidos por tu límite actual."
+
+buttons:
+  home:
+    text: "&6&l{home_name}\n&r&8{home_world}  {home_x}, {home_y}, {home_z}"
+    image:
+      type: "URL"
+      data: ""
+  create:
+    text: "&a&lCrear {home_name}\n&r&8Guardar ubicación actual."
+    image:
+      type: "URL"
+      data: ""
+  locked-home:
+    text: "&c&l{home_name}\n&r&8Hogar suspendido."
+    image:
+      type: "URL"
+      data: ""
+  locked-slot:
+    text: "&8Espacio {home_number} bloqueado\n&r&7Aumenta tu límite de hogares."
+  back:
+    text: "&6Volver a MDVSocial"
+  close:
+    text: "&cCerrar"
+
+home-actions:
+  title: "&6&l{home_name}"
+  content:
+    - "&7Mundo: &f{home_world}"
+    - "&7X: &f{home_x}  &7Y: &f{home_y}  &7Z: &f{home_z}"
+  teleport: "&aTeletransportarse"
+  update: "&eActualizar ubicación"
+  delete: "&cEliminar hogar"
+  back: "&6Volver"
+
+locked-menu:
+  title: "&c&lHogar suspendido"
+  content:
+    - "&7{home_name} está guardado pero supera tu límite actual."
+    - "&7No puedes teletransportarte hasta recuperar un espacio."
+  delete: "&cEliminar hogar suspendido"
+  back: "&6Volver"
+
+delete-confirm:
+  title: "&c&lEliminar {home_name}"
+  content: "&7Esta acción elimina el hogar de EssentialsX. ¿Continuar?"
+  confirm: "&cSí, eliminar"
+  cancel: "&aNo, volver"

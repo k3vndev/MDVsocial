@@ -1,0 +1,11 @@
+# Opcional: estos mensajes tienen fallback interno en el JAR 1.6.1,
+# así que no es obligatorio agregarlos para que funcione.
+messages:
+  friend-target-not-found: '&cEse jugador no está conectado o el nombre no es válido.'
+  friend-request-accepted: '&aAceptaste la solicitud de amistad de &e{target}&a.'
+  friend-request-denied: '&eRechazaste la solicitud de amistad de &c{target}&e.'
+  party-target-not-found: '&cEse jugador no está conectado o el nombre no es válido.'
+  party-request-accepted: '&aAceptaste la invitación al grupo de &e{target}&a.'
+  party-request-denied: '&eRechazaste la invitación al grupo de &c{target}&e.'
+  social-request-expired: '&cEsa solicitud ya expiró.'
+  social-request-error: '&cNo se pudo procesar esa solicitud de MMOCore.'

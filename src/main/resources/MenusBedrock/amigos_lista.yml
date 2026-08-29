@@ -1,0 +1,60 @@
+type: "DYNAMIC_FRIENDS"
+title: "&a&lLista de Amigos"
+content:
+  - "&7Amigos: &f{friend_count}"
+  - "&7Solicitudes pendientes: &e{request_count}"
+  - "&8Selecciona un amigo para abrir sus opciones."
+
+friend:
+  online:
+    text: "&a● &f{friend_name}\n&r&8Conectado"
+    image:
+      type: "URL"
+      data: ""
+  offline:
+    text: "&8● &7{friend_name}\n&r&8Desconectado"
+    image:
+      type: "URL"
+      data: ""
+
+buttons:
+  add:
+    enabled: true
+    text: "&a&lAñadir amigo\n&r&8Escribe el nombre del jugador."
+    image:
+      type: "URL"
+      data: ""
+  requests:
+    enabled: true
+    text: "&e&lSolicitudes ({request_count})\n&r&8Acepta o rechaza solicitudes."
+    image:
+      type: "URL"
+      data: ""
+  previous:
+    text: "&ePágina anterior"
+  next:
+    text: "&ePágina siguiente"
+  back:
+    text: "&6Volver"
+  close:
+    text: "&cCerrar"
+
+add-form:
+  title: "&a&lAñadir amigo"
+  input-label: "&eNombre del jugador"
+  input-placeholder: "Escribe el nombre..."
+
+requests-menu:
+  title: "&e&lSolicitudes de Amistad"
+  content: "&7Solicitudes pendientes: &f{request_count}"
+  empty: "&7No tienes solicitudes de amistad pendientes."
+  request:
+    text: "&e{creator}\n&r&8Toca para responder."
+  back: "&6Volver a Amigos"
+  close: "&cCerrar"
+  detail:
+    title: "&e&lSolicitud de {creator}"
+    content: "&7¿Quieres aceptar la solicitud de amistad de &f{creator}&7?"
+    accept: "&aAceptar solicitud"
+    deny: "&cRechazar solicitud"
+    back: "&6Volver"
