@@ -1,0 +1,27 @@
+type: "SIMPLE"
+title: "&8&lAmigos"
+content:
+  - "&7Selecciona una opción."
+buttons:
+  listaamigos:
+    text: "&a&lLista de Amigos\n&7Consulta tu lista de amigos."
+    action: "OPEN_BEDROCK_FRIENDS"
+    commands:
+      - "friends"
+  party:
+    text: "&d&lGrupo de Aventura\n&7Crea una party para explorar,"
+    action: "OPEN_BEDROCK_PARTY"
+    commands:
+      - "party"
+  correo:
+    text: "&6&lBuzón\n&7Lee cartas recibidas"
+    action: "OPEN_MENU"
+    target-menu: "correo"
+  enviar:
+    text: "&e&lEnviar Carta\n&7Escribe una carta a otro"
+    action: "START_MAIL_SEND"
+    close-on-click: true
+  volver:
+    text: "&6&lVolver\n&7Regresa al menú anterior."
+    action: "OPEN_MENU"
+    target-menu: "main"

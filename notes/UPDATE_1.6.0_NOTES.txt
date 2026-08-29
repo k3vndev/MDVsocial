@@ -1,0 +1,87 @@
+MDVSocial 1.6.0 - Compatibilidad nativa Bedrock (Geyser/Floodgate)
+=================================================================
+
+OBJETIVO
+-------
+MDVSocial conserva los inventarios existentes de Java en /Menus y añade una
+interfaz independiente para Bedrock en /MenusBedrock usando Forms nativos de
+Floodgate/Cumulus. La lógica social, datos, permisos y acciones siguen siendo
+los mismos: solo cambia la capa visual según la plataforma del jugador.
+
+CAMBIOS PRINCIPALES
+-------------------
+- Detección automática de clientes Bedrock con FloodgateApi#isFloodgatePlayer.
+- Nueva carpeta plugins/MDVSocial/MenusBedrock/.
+- Los 12 menús actuales tienen equivalente Bedrock:
+  main, menuperfil, menuamigos, jugador_opciones, amigo_opciones, correo,
+  clan, clan_con_clan, clan_sin_clan, warps, ayuda y admin.
+- Los clics secundarios de Java se convierten en botones separados en Bedrock.
+  Ejemplo: Mensaje privado en jugador_opciones.
+- Menús dinámicos Bedrock nativos para:
+  * Títulos, tienda de títulos, títulos bloqueados y rangos.
+  * Buzón, lectura, respuesta, borrado y bloqueo de remitentes.
+  * Composición de cartas con campos de texto nativos.
+  * Casas/Homes, creación, teletransporte, actualización y borrado.
+  * Lista de amigos y opciones de cada amigo.
+  * Grupo de Aventura / Party.
+  * Biblioteca segura de MMOItems para staff, incluida selección 1/stack.
+  * Mensajes privados con campo de texto Bedrock nativo.
+- Fallback configurable a inventario Java si falta un MenusBedrock concreto.
+- Maven añade la API oficial Floodgate 2.2.5-SNAPSHOT como provided.
+- plugin.yml declara Floodgate como softdepend y la versión pasa a 1.6.0.
+
+CONFIG NUEVA
+------------
+bedrock:
+  enabled: true
+  fallback-to-java-menu: true
+  dynamic-page-size: 8
+
+FORMATO DE MenusBedrock
+-----------------------
+Ejemplo:
+
+type: "SIMPLE"
+title: "&8&lMDVSocial"
+content:
+  - "&7Selecciona una opción."
+buttons:
+  amigos:
+    text: "&a&lAmigos\n&7Abre tus opciones sociales"
+    action: "OPEN_MENU"
+    target-menu: "menuamigos"
+
+Se reutilizan las acciones de los menús Java siempre que es posible:
+OPEN_MENU, OPEN_CONDITIONAL_MENU, COMMAND_PLAYER, MDVCLANS_OPEN,
+OPEN_MAILBOX, OPEN_TITLES, START_MAIL_SEND, START_MAIL_SEND_TARGET,
+INVITE_PARTY_TARGET, INVITE_FRIEND_TARGET, SUGGEST_MSG_TARGET, etc.
+
+Acciones exclusivas de la capa Bedrock:
+- OPEN_BEDROCK_FRIENDS
+- OPEN_BEDROCK_PARTY
+
+INSTALACION / ACTUALIZACION
+---------------------------
+1. Compilar con Java 21: mvn clean package
+2. Sustituir el jar anterior por MDVSocial-1.6.0.jar.
+3. Mantener Floodgate instalado y funcionando junto a Geyser.
+4. Copiar la nueva carpeta MenusBedrock dentro de plugins/MDVSocial/.
+5. Añadir la sección bedrock al config.yml si se conserva un config viejo.
+6. Reiniciar el servidor (preferible a /reload).
+
+IMPORTANTE SOBRE OTROS PLUGINS
+------------------------------
+MDVSocial puede adaptar solamente las interfaces que él controla. Un botón que
+ejecuta un comando de otro plugin (por ejemplo MDVQuest, MDVRecetas, MDVClans
+o Suministros) seguirá mostrando el tipo de GUI que ese otro plugin implemente.
+Para convertir también esas GUIs a Forms Bedrock hay que adaptar sus respectivos
+sources.
+
+VALIDACION REALIZADA EN ESTA ENTREGA
+------------------------------------
+- Los 12 YAML de MenusBedrock cargan correctamente como YAML.
+- Todas las referencias internas de menús Bedrock apuntan a archivos existentes.
+- Los Menus Java del config actual no fueron modificados.
+- javac realizó el parseo completo del source sin detectar errores sintácticos;
+  el entorno de trabajo no dispone de las dependencias Maven/Paper instaladas,
+  por lo que el empaquetado final debe ejecutarse mediante Maven/GitHub Actions.

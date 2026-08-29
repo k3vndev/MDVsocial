@@ -32,6 +32,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.io.File;
 import java.io.IOException;
@@ -183,6 +185,10 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
     }
 
     private void openHomesMenu(Player player) {
+        if (plugin.isBedrockPlayer(player)) {
+            openBedrockHomesMenu(player);
+            return;
+        }
         List<HomeData> homes = readHomes(player);
         int maxHomes = getMaxHomes(player);
         Set<String> lockedNames = syncLockedHomes(player, homes, maxHomes);
@@ -235,6 +241,131 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
         }
 
         player.openInventory(inv);
+    }
+
+
+    private void openBedrockHomesMenu(Player player) {
+        List<HomeData> homes = readHomes(player);
+        int maxHomes = getMaxHomes(player);
+        Set<String> lockedNames = syncLockedHomes(player, homes, maxHomes);
+        List<HomeData> displayed = homes.stream()
+                .map(home -> home.withLocked(lockedNames.contains(normalizeHomeName(home.name))))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        StringBuilder content = new StringBuilder(color("&7Hogares: &f" + homes.size() + "&7/&f" + maxHomes));
+        if (lockExcessEnabled && displayed.stream().anyMatch(home -> home.locked))
+            content.append("\n").append(color("&cAlgunos hogares están suspendidos por tu límite actual."));
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color(applyGlobalPlaceholders(title, player, displayed, maxHomes)))
+                .content(content.toString());
+        List<Runnable> actions = new ArrayList<>();
+
+        int totalSlots = Math.max(maxVisibleHomes, Math.min(displayed.size(), 9));
+        for (int i = 1; i <= totalSlots; i++) {
+            HomeData home = i <= displayed.size() ? displayed.get(i - 1) : null;
+            boolean withinLimit = i <= maxHomes;
+            if (home == null) {
+                String generated = generateHomeName(i);
+                if (withinLimit) {
+                    builder.button(color("&aCrear &f" + generated + "\n&7Guardar ubicación actual"));
+                    int number = i;
+                    actions.add(() -> runHomeCommand(player, setCommand, generated, number, true));
+                } else {
+                    builder.button(color("&8🔒 Espacio " + i + " bloqueado\n&7Aumenta tu límite de hogares"));
+                    actions.add(() -> openBedrockHomesMenu(player));
+                }
+                continue;
+            }
+
+            int number = i;
+            if (home.locked) {
+                builder.button(color("&c🔒 " + home.name + "\n&7Hogar suspendido"));
+                actions.add(() -> openBedrockLockedHome(player, home, number));
+            } else {
+                builder.button(color("&6🏠 " + home.name + "\n&7" + home.world + "  "
+                        + Math.round(home.x) + ", " + Math.round(home.y) + ", " + Math.round(home.z)));
+                actions.add(() -> openBedrockHomeActions(player, home, number));
+            }
+        }
+
+        builder.button(color("&6Volver a MDVSocial"));
+        actions.add(() -> Bukkit.dispatchCommand(player, "social"));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private void openBedrockHomeActions(Player player, HomeData home, int number) {
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&6&l" + home.name))
+                .content(color("&7Mundo: &f" + home.world
+                        + "\n&7X: &f" + Math.round(home.x)
+                        + "  &7Y: &f" + Math.round(home.y)
+                        + "  &7Z: &f" + Math.round(home.z)))
+                .button(color("&aTeletransportarse"))
+                .button(color("&eActualizar ubicación"))
+                .button(color("&cEliminar hogar"))
+                .button(color("&6Volver"));
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            switch (response.clickedButtonId()) {
+                case 0 -> runHomeCommand(player, teleportCommand, home.name, number, true);
+                case 1 -> runHomeCommand(player, setCommand, home.name, number, true);
+                case 2 -> confirmBedrockDeleteHome(player, home, number);
+                default -> openBedrockHomesMenu(player);
+            }
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private void openBedrockLockedHome(Player player, HomeData home, int number) {
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&c&lHogar suspendido"))
+                .content(color("&7" + home.name + " está guardado pero supera tu límite actual."
+                        + "\n&7No puedes teletransportarte hasta recuperar un espacio."));
+        List<Runnable> actions = new ArrayList<>();
+        if (allowDeleteLocked) {
+            builder.button(color("&cEliminar hogar suspendido"));
+            actions.add(() -> confirmBedrockDeleteHome(player, home, number));
+        }
+        builder.button(color("&6Volver"));
+        actions.add(() -> openBedrockHomesMenu(player));
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private void confirmBedrockDeleteHome(Player player, HomeData home, int number) {
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&c&lEliminar " + home.name))
+                .content(color("&7Esta acción elimina el hogar de EssentialsX. ¿Continuar?"))
+                .button(color("&cSí, eliminar"))
+                .button(color("&aNo, volver"));
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            if (response.clickedButtonId() == 0)
+                runHomeCommand(player, deleteCommand, home.name, number, true);
+            else
+                openBedrockHomesMenu(player);
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private boolean sendBedrockForm(Player player, SimpleForm.Builder builder) {
+        try {
+            return FloodgateApi.getInstance().sendForm(player.getUniqueId(), builder);
+        } catch (Throwable ex) {
+            plugin.getLogger().warning("No se pudo enviar formulario de hogares a " + player.getName()
+                    + ": " + ex.getMessage());
+            return false;
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

@@ -10,6 +10,9 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
+import org.geysermc.cumulus.form.CustomForm;
+import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -99,6 +102,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private SocialMenuItemManager socialMenuItemManager;
     private PlayerHomesMenuManager playerHomesMenuManager;
     private MMOItemsBrowserManager mmoItemsBrowserManager;
+    private BedrockMenuManager bedrockMenuManager;
 
     private org.bukkit.NamespacedKey keyAction;
     private org.bukkit.NamespacedKey keyTitle;
@@ -146,6 +150,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
 
         saveDefaultConfig();
         loadAll();
+        bedrockMenuManager = new BedrockMenuManager(this);
+        bedrockMenuManager.enable();
         setupEconomy();
 
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -187,7 +193,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         mmoItemsBrowserManager.enable();
         startInteractiveChatProfileTask();
 
-        getLogger().info("MDVSocial 1.5.2 habilitado.");
+        getLogger().info("MDVSocial 1.6.0 habilitado. Compatibilidad Bedrock/Floodgate activa.");
     }
 
     @Override
@@ -226,6 +232,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         ensureDefaultMenus();
         loadCustomMenus();
         loadExternalGuiActions();
+        if (bedrockMenuManager != null)
+            bedrockMenuManager.reload();
         if (mmoItemsBrowserManager != null)
             mmoItemsBrowserManager.reload();
     }
@@ -1860,6 +1868,140 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         };
     }
 
+
+    String normalizeBedrockAction(String action) {
+        String normalized = normalizeAction(action);
+        return switch (normalized) {
+            case "OPEN_FRIENDS_BEDROCK", "BEDROCK_FRIENDS", "OPEN_BEDROCK_FRIENDS" -> "OPEN_BEDROCK_FRIENDS";
+            case "OPEN_PARTY_BEDROCK", "BEDROCK_PARTY", "OPEN_BEDROCK_PARTY" -> "OPEN_BEDROCK_PARTY";
+            case "NONE", "INFO", "NO_ACTION" -> "NONE";
+            default -> normalized;
+        };
+    }
+
+    boolean isBedrockPlayer(Player player) {
+        return bedrockMenuManager != null && bedrockMenuManager.isBedrock(player);
+    }
+
+    boolean isBedrockFriend(Player player, UUID targetUuid) {
+        return isMMOCoreFriend(player, targetUuid);
+    }
+
+    void sendNoPermission(Player player) {
+        msg(player, "no-permission");
+    }
+
+    String bedrockText(String raw, Player player, UUID targetUuid, String targetName, boolean targetOnline) {
+        if (raw == null)
+            return "";
+        return color(applyTargetPlaceholders(raw, player, targetUuid, targetName, targetOnline));
+    }
+
+    void openBedrockBack(Player player, BedrockMenuManager.BedrockMenuContext context) {
+        if (context != null && context.previousMenu != null && !context.previousMenu.isBlank()) {
+            openCustomMenu(player, context.previousMenu, context.previousPage, "", 1,
+                    context.targetUuid, context.targetName, context.targetOnline);
+        } else {
+            openSocialStart(player);
+        }
+    }
+
+    void handleBedrockMenuAction(Player player, BedrockMenuManager.BedrockMenuButton button,
+                                 BedrockMenuManager.BedrockMenuContext context) {
+        if (player == null || button == null || context == null)
+            return;
+        if (!button.permission.isBlank() && !player.hasPermission(button.permission)) {
+            msg(player, "no-permission");
+            playUiSound(player, "invalid");
+            return;
+        }
+
+        String action = normalizeBedrockAction(button.action);
+        playUiSound(player, button.sound == null || button.sound.isBlank() ? action : button.sound);
+
+        switch (action) {
+            case "", "NONE" -> openCustomMenu(player, context.menuId, context.page,
+                    context.previousMenu, context.previousPage, context.targetUuid, context.targetName,
+                    context.targetOnline);
+            case "CLOSE" -> {
+                // El formulario ya se cierra al elegir el boton.
+            }
+            case "OPEN_MAIN" -> openSocialStart(player);
+            case "OPEN_TITLES", "OPEN_TITLES_HOME" -> openTitlesHome(player);
+            case "OPEN_MY_TITLES" -> openTitleList(player, "MY_TITLES", 0);
+            case "OPEN_SHOP" -> openTitleList(player, "SHOP", 0);
+            case "OPEN_LOCKED" -> openTitleList(player, "LOCKED", 0);
+            case "OPEN_RANKS" -> openRanks(player, 0);
+            case "OPEN_MENU" -> openCustomMenu(player, button.targetMenu, 1, context.menuId, context.page,
+                    context.targetUuid, context.targetName, context.targetOnline);
+            case "OPEN_CONDITIONAL_MENU" -> {
+                boolean result = evaluateMenuCondition(player, button.conditionPlaceholder, button.conditionEquals);
+                String target = result ? button.trueMenu : button.falseMenu;
+                openCustomMenu(player, target, 1, context.menuId, context.page,
+                        context.targetUuid, context.targetName, context.targetOnline);
+            }
+            case "MDVCLANS_OPEN" -> {
+                String clansMenu = button.clansMenu;
+                if (clansMenu == null || clansMenu.isBlank())
+                    clansMenu = button.targetMenu;
+                if (clansMenu == null || clansMenu.isBlank())
+                    clansMenu = "auto";
+                Bukkit.dispatchCommand(player, "clan abrir " + clansMenu);
+            }
+            case "BACK" -> openBedrockBack(player, context);
+            case "COMMAND_PLAYER" -> runBedrockPlayerCommands(player, button.commands, context);
+            case "OPEN_MAILBOX" -> openMailbox(player, 0);
+            case "OPEN_MMOITEMS_BROWSER" -> {
+                if (mmoItemsBrowserManager == null)
+                    player.sendMessage(color(getPrefix() + "&cLa biblioteca de objetos no está disponible."));
+                else
+                    mmoItemsBrowserManager.open(player);
+            }
+            case "START_MAIL_SEND" -> startMailRecipientPrompt(player,
+                    context.menuId.isBlank() ? "correo" : context.menuId, context.page);
+            case "START_MAIL_SEND_TARGET" -> startMailMessagePromptToTarget(player, context.targetUuid,
+                    context.targetName, context.menuId.isBlank() ? "correo" : context.menuId, context.page);
+            case "INVITE_PARTY_TARGET" -> inviteFriendToParty(player, context.targetUuid, context.targetName);
+            case "INVITE_FRIEND_TARGET" -> inviteMMOCoreFriend(player, context.targetUuid, context.targetName);
+            case "SUGGEST_MSG_TARGET" -> openBedrockPrivateMessage(player, context.targetName, context);
+            case "START_MAIL_BLOCK" -> startMailBlockPrompt(player, true,
+                    context.menuId.isBlank() ? "correo" : context.menuId, context.page);
+            case "START_MAIL_UNBLOCK" -> startMailBlockPrompt(player, false,
+                    context.menuId.isBlank() ? "correo" : context.menuId, context.page);
+            case "CLEAR_TITLE" -> {
+                clearActiveTitle(player);
+                openTitlesHome(player);
+            }
+            case "PREVIOUS_PAGE", "PREV_PAGE" -> openCustomMenu(player, context.menuId,
+                    Math.max(1, context.page - 1), context.previousMenu, context.previousPage,
+                    context.targetUuid, context.targetName, context.targetOnline);
+            case "NEXT_PAGE" -> openCustomMenu(player, context.menuId, context.page + 1,
+                    context.previousMenu, context.previousPage, context.targetUuid, context.targetName,
+                    context.targetOnline);
+            case "OPEN_BEDROCK_FRIENDS" -> openBedrockFriends(player, 0);
+            case "OPEN_BEDROCK_PARTY" -> openBedrockParty(player);
+            default -> {
+                player.sendMessage(color(getPrefix() + "&cAcción Bedrock no reconocida: &e" + action));
+                getLogger().warning("Acción Bedrock no reconocida en " + context.menuId + ": " + action);
+            }
+        }
+    }
+
+    private void runBedrockPlayerCommands(Player player, List<String> commands,
+                                          BedrockMenuManager.BedrockMenuContext context) {
+        if (commands == null || commands.isEmpty())
+            return;
+        for (String line : commands) {
+            String cmd = applyTargetPlaceholders(line, player, context.targetUuid, context.targetName,
+                    context.targetOnline).trim();
+            if (cmd.isBlank())
+                continue;
+            if (cmd.startsWith("/"))
+                cmd = cmd.substring(1);
+            Bukkit.dispatchCommand(player, cmd);
+        }
+    }
+
     private void openSocialStart(Player player) {
         String start = normalize(getConfig().getString("settings.start-menu", "main"));
         if (customMenus.containsKey(start))
@@ -1877,6 +2019,16 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private void openCustomMenu(Player player, String menuId, int page, String previousMenu, int previousPage,
             UUID targetUuid, String targetName, boolean targetOnline) {
         menuId = normalize(menuId);
+        if (isBedrockPlayer(player) && bedrockMenuManager != null) {
+            boolean opened = bedrockMenuManager.open(player, menuId, page, previousMenu, previousPage,
+                    targetUuid, targetName, targetOnline);
+            if (opened)
+                return;
+            if (!getConfig().getBoolean("bedrock.fallback-to-java-menu", true)) {
+                player.sendMessage(color(getPrefix() + "&cNo existe la version Bedrock del menu &e" + menuId + "&c."));
+                return;
+            }
+        }
         CustomMenuDef def = customMenus.get(menuId);
         if (def == null) {
             player.sendMessage(color(getPrefix() + "&cEse menu no existe: &e" + menuId));
@@ -2301,6 +2453,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void startMailRecipientPrompt(Player player, String returnMenu, int returnPage) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailCompose(player, returnMenu, returnPage);
+            return;
+        }
         if (!mailEnabled()) {
             msg(player, "mail-disabled");
             return;
@@ -2316,6 +2472,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
 
     private void startMailMessagePromptToTarget(Player player, UUID targetUuid, String fallbackName, String returnMenu,
             int returnPage) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailMessageToTarget(player, targetUuid, fallbackName, returnMenu, returnPage);
+            return;
+        }
         if (!mailEnabled()) {
             msg(player, "mail-disabled");
             return;
@@ -2346,12 +2506,20 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void startMailBlockPrompt(Player player, boolean block, String returnMenu, int returnPage) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailBlockForm(player, block, returnMenu, returnPage);
+            return;
+        }
         mailSessions.put(player.getUniqueId(),
                 new MailComposeSession(block ? MailStage.BLOCK : MailStage.UNBLOCK, null, returnMenu, returnPage));
         msg(player, block ? "mail-block-prompt" : "mail-unblock-prompt");
     }
 
     private void startMailReplyFromMail(Player player, String mailId, int returnPage) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailReply(player, mailId, returnPage);
+            return;
+        }
         if (!mailEnabled()) {
             msg(player, "mail-disabled");
             return;
@@ -2908,6 +3076,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openMailbox(Player player, int page) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailbox(player, page);
+            return;
+        }
         if (!mailEnabled()) {
             msg(player, "mail-disabled");
             return;
@@ -3018,6 +3190,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openMailRead(Player player, String id, int page) {
+        if (isBedrockPlayer(player)) {
+            openBedrockMailRead(player, id, page);
+            return;
+        }
         if (id == null || id.isBlank() || !mailData.contains(mailPath(player.getUniqueId(), "letters." + id))) {
             msg(player, "mail-not-found");
             openMailbox(player, page);
@@ -3421,6 +3597,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openTitlesHome(Player player) {
+        if (isBedrockPlayer(player)) {
+            openBedrockTitlesHome(player);
+            return;
+        }
         Inventory inv = createMenu("TITLES_HOME", getMenuSize("titles"), getMenuTitle("titles"), 0);
         fill(inv);
         inv.setItem(getConfig().getInt("titles-menu.my-titles.slot", 10),
@@ -3439,6 +3619,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openTitleList(Player player, String type, int page) {
+        if (isBedrockPlayer(player)) {
+            openBedrockTitleList(player, type, page);
+            return;
+        }
         String menuKey = switch (type) {
             case "MY_TITLES" -> "my-titles";
             case "SHOP" -> "title-shop";
@@ -3477,6 +3661,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openRanks(Player player, int page) {
+        if (isBedrockPlayer(player)) {
+            openBedrockRanks(player, page);
+            return;
+        }
         Map<Integer, Map<Integer, RankDef>> layout = buildRankLayout();
         int maxPage = Math.max(0, layout.keySet().stream().max(Integer::compareTo).orElse(0));
         page = Math.max(0, Math.min(page, maxPage));
@@ -3538,6 +3726,670 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         if (layout.isEmpty())
             layout.put(0, new LinkedHashMap<>());
         return layout;
+    }
+
+
+    // ==========================================================
+    // BEDROCK - MENUS DINAMICOS NATIVOS (Floodgate/Cumulus)
+    // ==========================================================
+
+    private boolean sendBedrockSimpleForm(Player player, SimpleForm.Builder builder) {
+        if (!isBedrockPlayer(player))
+            return false;
+        try {
+            return FloodgateApi.getInstance().sendForm(player.getUniqueId(), builder);
+        } catch (Throwable ex) {
+            getLogger().warning("No se pudo enviar SimpleForm a " + player.getName() + ": " + ex.getMessage());
+            return false;
+        }
+    }
+
+    private boolean sendBedrockCustomForm(Player player, CustomForm.Builder builder) {
+        if (!isBedrockPlayer(player))
+            return false;
+        try {
+            return FloodgateApi.getInstance().sendForm(player.getUniqueId(), builder);
+        } catch (Throwable ex) {
+            getLogger().warning("No se pudo enviar CustomForm a " + player.getName() + ": " + ex.getMessage());
+            return false;
+        }
+    }
+
+    private String bedrockConfiguredButtonText(String path, String fallback) {
+        ConfigurationSection sec = getConfig().getConfigurationSection(path);
+        if (sec == null)
+            return color(fallback);
+        String name = sec.getString("name", fallback);
+        List<String> lore = sec.getStringList("lore");
+        String extra = lore.stream()
+                .filter(line -> line != null && !line.isBlank())
+                .filter(line -> !line.toLowerCase(Locale.ROOT).contains("click"))
+                .findFirst().orElse("");
+        return color(name + (extra.isBlank() ? "" : "\n" + extra));
+    }
+
+    private void openBedrockTitlesHome(Player player) {
+        String activeId = getActiveTitleId(player.getUniqueId());
+        TitleDef active = titles.get(activeId);
+        String activeName = active == null ? getConfig().getString("settings.default-title", "forastero") : active.display;
+        String title = color(getMenuTitle("titles"));
+        String content = color("&7Título equipado: &r" + activeName + "\n&7Elige una categoría.");
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(title)
+                .content(content)
+                .button(bedrockConfiguredButtonText("titles-menu.my-titles", "&aMis títulos"))
+                .button(bedrockConfiguredButtonText("titles-menu.shop", "&6Tienda de títulos"))
+                .button(bedrockConfiguredButtonText("titles-menu.locked", "&cTítulos bloqueados"))
+                .button(bedrockConfiguredButtonText("titles-menu.ranks", "&bRangos"))
+                .button(bedrockConfiguredButtonText("items.clear-title", "&eQuitar título"))
+                .button(bedrockConfiguredButtonText("items.back", "&6Volver"))
+                .button(bedrockConfiguredButtonText("items.close", "&cCerrar"));
+
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            switch (response.clickedButtonId()) {
+                case 0 -> openBedrockTitleList(player, "MY_TITLES", 0);
+                case 1 -> openBedrockTitleList(player, "SHOP", 0);
+                case 2 -> openBedrockTitleList(player, "LOCKED", 0);
+                case 3 -> openBedrockRanks(player, 0);
+                case 4 -> {
+                    clearActiveTitle(player);
+                    openBedrockTitlesHome(player);
+                }
+                case 5 -> openSocialStart(player);
+                default -> { }
+            }
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockTitleList(Player player, String type, int page) {
+        String menuKey = switch (type) {
+            case "MY_TITLES" -> "my-titles";
+            case "SHOP" -> "title-shop";
+            case "LOCKED" -> "locked-titles";
+            default -> "my-titles";
+        };
+        List<TitleDef> list = filteredTitles(player, type);
+        list.sort(Comparator.comparing(t -> stripColor(t.display)));
+
+        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int maxPage = Math.max(0, (int) Math.ceil(list.size() / (double) perPage) - 1);
+        int safePage = Math.max(0, Math.min(page, maxPage));
+        int start = safePage * perPage;
+        int end = Math.min(list.size(), start + perPage);
+
+        String header = color(getMenuTitle(menuKey)) + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")";
+        String content = list.isEmpty()
+                ? color("&7No hay títulos en esta categoría.")
+                : color("&7Selecciona un título para ver/aplicar su acción.");
+        SimpleForm.Builder builder = SimpleForm.builder().title(header).content(content);
+        List<Runnable> actions = new ArrayList<>();
+
+        for (int i = start; i < end; i++) {
+            TitleDef title = list.get(i);
+            StringBuilder text = new StringBuilder(color(title.display));
+            if (type.equals("MY_TITLES")) {
+                boolean active = getActiveTitleId(player.getUniqueId()).equals(title.id);
+                text.append("\n").append(color(active ? "&aEquipado" : "&eToca para equipar"));
+                actions.add(() -> {
+                    equipTitle(player, title.id);
+                    openBedrockTitleList(player, type, safePage);
+                });
+            } else if (type.equals("SHOP")) {
+                text.append("\n").append(color("&6" + formatPrice(title.price) + " monedas"));
+                actions.add(() -> {
+                    buyTitle(player, title.id);
+                    openBedrockTitleList(player, type, safePage);
+                });
+            } else {
+                String req = title.unlockPermission == null || title.unlockPermission.isBlank()
+                        ? "&cBloqueado" : "&cRequiere: &7" + title.unlockPermission;
+                text.append("\n").append(color(req));
+                actions.add(() -> {
+                    msg(player, "title-locked");
+                    openBedrockTitleList(player, type, safePage);
+                });
+            }
+            builder.button(text.toString());
+        }
+
+        if (safePage > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockTitleList(player, type, safePage - 1));
+        }
+        if (safePage < maxPage) {
+            builder.button(color("&ePágina siguiente"));
+            actions.add(() -> openBedrockTitleList(player, type, safePage + 1));
+        }
+        builder.button(color("&6Volver a Títulos"));
+        actions.add(() -> openBedrockTitlesHome(player));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockRanks(Player player, int page) {
+        Map<Integer, Map<Integer, RankDef>> layout = buildRankLayout();
+        int maxPage = Math.max(0, layout.keySet().stream().max(Integer::compareTo).orElse(0));
+        int safePage = Math.max(0, Math.min(page, maxPage));
+        Map<Integer, RankDef> current = layout.getOrDefault(safePage, Collections.emptyMap());
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color(getMenuTitle("ranks")) + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")")
+                .content(color("&7Tus rangos y requisitos actuales."));
+        List<Runnable> actions = new ArrayList<>();
+
+        current.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            RankDef rank = entry.getValue();
+            boolean owned = rank.permission == null || rank.permission.isBlank() || player.hasPermission(rank.permission);
+            String status = owned ? "&aObtenido" : "&cNo obtenido";
+            builder.button(color(rank.display + "\n" + status));
+            actions.add(() -> openBedrockRanks(player, safePage));
+        });
+
+        if (safePage > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockRanks(player, safePage - 1));
+        }
+        if (safePage < maxPage) {
+            builder.button(color("&ePágina siguiente"));
+            actions.add(() -> openBedrockRanks(player, safePage + 1));
+        }
+        builder.button(color("&6Volver a Títulos"));
+        actions.add(() -> openBedrockTitlesHome(player));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockMailbox(Player player, int page) {
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.read")) {
+            msg(player, "no-permission");
+            return;
+        }
+        List<String> ids = getMailIds(player.getUniqueId());
+        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int maxPage = Math.max(0, (int) Math.ceil(ids.size() / (double) perPage) - 1);
+        int safePage = Math.max(0, Math.min(page, maxPage));
+        int start = safePage * perPage;
+        int end = Math.min(ids.size(), start + perPage);
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&6&lBuzón") + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")")
+                .content(color("&7Cartas: &f" + ids.size() + "&7/&f" + getMailboxLimit(player)
+                        + (ids.isEmpty() ? "\n&8No tienes cartas guardadas." : "\n&7Toca una carta para leerla.")));
+        List<Runnable> actions = new ArrayList<>();
+
+        for (int i = start; i < end; i++) {
+            String id = ids.get(i);
+            String base = mailPath(player.getUniqueId(), "letters." + id);
+            String sender = mailData.getString(base + ".from-name", "Desconocido");
+            String message = mailData.getString(base + ".message", "");
+            boolean read = mailData.getBoolean(base + ".read", false);
+            String label = (read ? "&eCarta de &f" : "&aNueva carta de &f") + sender
+                    + "\n&8" + shorten(message, 38);
+            builder.button(color(label));
+            actions.add(() -> openBedrockMailRead(player, id, safePage));
+        }
+
+        if (safePage > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockMailbox(player, safePage - 1));
+        }
+        if (safePage < maxPage) {
+            builder.button(color("&ePágina siguiente"));
+            actions.add(() -> openBedrockMailbox(player, safePage + 1));
+        }
+        builder.button(color("&6Volver a Correo"));
+        actions.add(() -> openCustomMenu(player, "correo", 1, "menuamigos", 1));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockMailRead(Player player, String id, int page) {
+        if (id == null || id.isBlank() || !mailData.contains(mailPath(player.getUniqueId(), "letters." + id))) {
+            msg(player, "mail-not-found");
+            openBedrockMailbox(player, page);
+            return;
+        }
+        String base = mailPath(player.getUniqueId(), "letters." + id);
+        mailData.set(base + ".read", true);
+        saveMailData();
+
+        String fromName = mailData.getString(base + ".from-name", "Desconocido");
+        String fromUuid = mailData.getString(base + ".from-uuid", "");
+        String message = mailData.getString(base + ".message", "");
+        String mailType = mailData.getString(base + ".type", "");
+        boolean clanInvite = "MDVCLANS_INVITE".equalsIgnoreCase(mailType);
+        long sentAt = mailData.getLong(base + ".sent-at", 0L);
+        long expiresAt = mailData.getLong(base + ".expires-at", 0L);
+
+        String content = color("&7De: &f" + fromName
+                + "\n&7Enviada: &e" + formatTime(sentAt)
+                + "\n&7Expira: &c" + daysLeftText(expiresAt)
+                + "\n\n&f" + message);
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color((clanInvite ? "&d&lInvitación de clan" : "&6&lCarta") + " &8- &f" + fromName))
+                .content(content);
+        List<Runnable> actions = new ArrayList<>();
+
+        if (clanInvite) {
+            builder.button(color("&aAceptar invitación"));
+            actions.add(() -> handleClanInviteMailAction(player, id, true, page));
+            builder.button(color("&cRechazar invitación"));
+            actions.add(() -> handleClanInviteMailAction(player, id, false, page));
+        } else {
+            builder.button(color("&eResponder"));
+            actions.add(() -> openBedrockMailReply(player, id, page));
+            builder.button(color("&cEliminar carta"));
+            actions.add(() -> confirmBedrockDeleteMail(player, id, page));
+            if (fromUuid != null && !fromUuid.isBlank()) {
+                builder.button(color("&4Bloquear remitente"));
+                actions.add(() -> {
+                    blockMailSender(player, fromUuid);
+                    openBedrockMailbox(player, page);
+                });
+            }
+        }
+        builder.button(color("&6Volver al buzón"));
+        actions.add(() -> openBedrockMailbox(player, page));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void confirmBedrockDeleteMail(Player player, String id, int page) {
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&c&lEliminar carta"))
+                .content(color("&7¿Seguro que quieres eliminar esta carta?"))
+                .button(color("&cSí, eliminar"))
+                .button(color("&aNo, volver"));
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            if (response.clickedButtonId() == 0) {
+                deleteMail(player, id);
+                openBedrockMailbox(player, page);
+            } else {
+                openBedrockMailRead(player, id, page);
+            }
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockPrivateMessage(Player player, String targetName,
+                                             BedrockMenuManager.BedrockMenuContext context) {
+        String safeName = targetName == null ? "" : targetName.trim();
+        if (safeName.isBlank()) {
+            msg(player, "social-target-not-found");
+            return;
+        }
+        CustomForm.Builder builder = CustomForm.builder()
+                .title(color("&b&lMensaje para &f" + safeName))
+                .input(color("&eMensaje"), "Escribe tu mensaje privado...", "");
+        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this, () ->
+                openCustomMenu(player, context.menuId, context.page, context.previousMenu, context.previousPage,
+                        context.targetUuid, context.targetName, context.targetOnline)));
+        builder.validResultHandler(response -> {
+            String message = response.asInput(0);
+            Bukkit.getScheduler().runTask(this, () -> {
+                if (message == null || message.isBlank()) {
+                    openCustomMenu(player, context.menuId, context.page, context.previousMenu, context.previousPage,
+                            context.targetUuid, context.targetName, context.targetOnline);
+                    return;
+                }
+                Bukkit.dispatchCommand(player, "msg " + safeName + " " + message.trim());
+            });
+        });
+        sendBedrockCustomForm(player, builder);
+    }
+
+    private void openBedrockMailCompose(Player player, String returnMenu, int returnPage) {
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.send")) {
+            msg(player, "no-permission");
+            return;
+        }
+        CustomForm.Builder builder = CustomForm.builder()
+                .title(color("&6&lEnviar carta"))
+                .input(color("&eDestinatario"), "Nombre del jugador", "")
+                .input(color("&eMensaje"), "Escribe tu carta...", "");
+        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
+                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
+        builder.validResultHandler(response -> {
+            String target = response.asInput(0);
+            String message = response.asInput(1);
+            Bukkit.getScheduler().runTask(this, () -> {
+                if (target == null || target.isBlank()) {
+                    msg(player, "mail-player-not-found");
+                    openBedrockMailCompose(player, returnMenu, returnPage);
+                    return;
+                }
+                sendMailByName(player, target.trim(), message == null ? "" : message.trim());
+                returnFromBedrockMail(player, returnMenu, returnPage);
+            });
+        });
+        sendBedrockCustomForm(player, builder);
+    }
+
+    private void openBedrockMailMessageToTarget(Player player, UUID targetUuid, String fallbackName,
+                                                 String returnMenu, int returnPage) {
+        if (!mailEnabled()) {
+            msg(player, "mail-disabled");
+            return;
+        }
+        if (!player.hasPermission("mdvsocial.mail.send")) {
+            msg(player, "no-permission");
+            return;
+        }
+        if (targetUuid == null) {
+            msg(player, "social-target-not-found");
+            return;
+        }
+        if (targetUuid.equals(player.getUniqueId())) {
+            msg(player, "mail-self");
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
+        String targetName = target.getName() == null || target.getName().isBlank() ? fallbackName : target.getName();
+        if (targetName == null || targetName.isBlank())
+            targetName = "jugador";
+        final String safeTargetName = targetName;
+
+        CustomForm.Builder builder = CustomForm.builder()
+                .title(color("&6&lCarta para &f" + safeTargetName))
+                .input(color("&eMensaje &7(máx. " + getMaxMailLength() + ")"), "Escribe tu carta...", "");
+        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
+                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
+        builder.validResultHandler(response -> {
+            String message = response.asInput(0);
+            Bukkit.getScheduler().runTask(this, () -> {
+                sendMailByUuid(player, targetUuid, safeTargetName, message == null ? "" : message.trim());
+                returnFromBedrockMail(player, returnMenu, returnPage);
+            });
+        });
+        sendBedrockCustomForm(player, builder);
+    }
+
+    private void openBedrockMailBlockForm(Player player, boolean block, String returnMenu, int returnPage) {
+        CustomForm.Builder builder = CustomForm.builder()
+                .title(color(block ? "&c&lBloquear cartas" : "&a&lDesbloquear cartas"))
+                .input(color("&eJugador"), "Nombre del jugador", "");
+        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
+                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
+        builder.validResultHandler(response -> {
+            String target = response.asInput(0);
+            Bukkit.getScheduler().runTask(this, () -> {
+                if (target == null || target.isBlank()) {
+                    returnFromBedrockMail(player, returnMenu, returnPage);
+                    return;
+                }
+                if (block)
+                    blockMailByName(player, target.trim());
+                else
+                    unblockMailByName(player, target.trim());
+                returnFromBedrockMail(player, returnMenu, returnPage);
+            });
+        });
+        sendBedrockCustomForm(player, builder);
+    }
+
+    private void openBedrockMailReply(Player player, String mailId, int returnPage) {
+        if (mailId == null || mailId.isBlank()
+                || !mailData.contains(mailPath(player.getUniqueId(), "letters." + mailId))) {
+            msg(player, "mail-not-found");
+            openBedrockMailbox(player, returnPage);
+            return;
+        }
+        String base = mailPath(player.getUniqueId(), "letters." + mailId);
+        String fromUuidText = mailData.getString(base + ".from-uuid", "");
+        String fromName = mailData.getString(base + ".from-name",
+                getConfig().getString("mail.server-author-name", "MDVCRAFT"));
+        if (fromUuidText == null || fromUuidText.isBlank()) {
+            msg(player, "mail-cannot-reply-server");
+            openBedrockMailRead(player, mailId, returnPage);
+            return;
+        }
+        try {
+            UUID targetUuid = UUID.fromString(fromUuidText);
+            openBedrockMailMessageToTarget(player, targetUuid, fromName, "MAILBOX", returnPage);
+        } catch (Exception ignored) {
+            msg(player, "mail-cannot-reply-server");
+            openBedrockMailRead(player, mailId, returnPage);
+        }
+    }
+
+    private void returnFromBedrockMail(Player player, String returnMenu, int returnPage) {
+        if (player == null || !player.isOnline())
+            return;
+        if (returnMenu != null && returnMenu.equalsIgnoreCase("MAILBOX")) {
+            openBedrockMailbox(player, Math.max(0, returnPage));
+            return;
+        }
+        String menu = returnMenu == null || returnMenu.isBlank() ? "correo" : returnMenu;
+        openCustomMenu(player, menu, Math.max(1, returnPage), "", 1);
+    }
+
+    private void openBedrockFriends(Player player, int page) {
+        List<UUID> friends = getMMOCoreFriendUuids(player);
+        friends.sort(Comparator.comparing(uuid -> {
+            OfflinePlayer off = Bukkit.getOfflinePlayer(uuid);
+            return off.getName() == null ? uuid.toString() : off.getName().toLowerCase(Locale.ROOT);
+        }));
+        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int maxPage = Math.max(0, (int) Math.ceil(friends.size() / (double) perPage) - 1);
+        int safePage = Math.max(0, Math.min(page, maxPage));
+        int start = safePage * perPage;
+        int end = Math.min(friends.size(), start + perPage);
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&a&lLista de Amigos") + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")")
+                .content(color(friends.isEmpty()
+                        ? "&7No se pudieron encontrar amigos en MMOCore o tu lista está vacía."
+                        : "&7Toca un amigo para abrir sus opciones."));
+        List<Runnable> actions = new ArrayList<>();
+        for (int i = start; i < end; i++) {
+            UUID uuid = friends.get(i);
+            Player online = Bukkit.getPlayer(uuid);
+            OfflinePlayer off = online != null ? online : Bukkit.getOfflinePlayer(uuid);
+            String name = off.getName() == null ? uuid.toString().substring(0, 8) : off.getName();
+            boolean isOnline = online != null;
+            builder.button(color((isOnline ? "&a● &f" : "&8● &7") + name));
+            actions.add(() -> openCustomMenu(player, "amigo_opciones", 1, "menuamigos", 1,
+                    uuid, name, isOnline));
+        }
+        if (safePage > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockFriends(player, safePage - 1));
+        }
+        if (safePage < maxPage) {
+            builder.button(color("&ePágina siguiente"));
+            actions.add(() -> openBedrockFriends(player, safePage + 1));
+        }
+        builder.button(color("&6Volver"));
+        actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private List<UUID> getMMOCoreFriendUuids(Player player) {
+        if (player == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore"))
+            return new ArrayList<>();
+        try {
+            Object data = getMMOCorePlayerData(player);
+            if (data == null)
+                return new ArrayList<>();
+            for (String methodName : List.of("getFriends", "getFriendList", "getFriendUUIDs", "getFriendUuids")) {
+                try {
+                    Method method = data.getClass().getMethod(methodName);
+                    Object result = method.invoke(data);
+                    List<UUID> parsed = extractUuids(result);
+                    if (!parsed.isEmpty())
+                        return parsed;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+        } catch (Throwable ex) {
+            getLogger().fine("No se pudo leer lista de amigos MMOCore para Bedrock: " + ex.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    private List<UUID> extractUuids(Object value) {
+        List<UUID> out = new ArrayList<>();
+        if (value == null)
+            return out;
+        if (value instanceof Map<?, ?> map) {
+            for (Object key : map.keySet()) {
+                UUID uuid = extractUuid(key);
+                if (uuid != null)
+                    out.add(uuid);
+            }
+            for (Object val : map.values()) {
+                UUID uuid = extractUuid(val);
+                if (uuid != null && !out.contains(uuid))
+                    out.add(uuid);
+            }
+            return out;
+        }
+        if (value instanceof Iterable<?> iterable) {
+            for (Object item : iterable) {
+                UUID uuid = extractUuid(item);
+                if (uuid != null && !out.contains(uuid))
+                    out.add(uuid);
+            }
+            return out;
+        }
+        if (value.getClass().isArray()) {
+            int length = java.lang.reflect.Array.getLength(value);
+            for (int i = 0; i < length; i++) {
+                UUID uuid = extractUuid(java.lang.reflect.Array.get(value, i));
+                if (uuid != null && !out.contains(uuid))
+                    out.add(uuid);
+            }
+            return out;
+        }
+        UUID single = extractUuid(value);
+        if (single != null)
+            out.add(single);
+        return out;
+    }
+
+    private UUID extractUuid(Object value) {
+        if (value == null)
+            return null;
+        if (value instanceof UUID uuid)
+            return uuid;
+        if (value instanceof Player p)
+            return p.getUniqueId();
+        if (value instanceof OfflinePlayer p)
+            return p.getUniqueId();
+        if (value instanceof String str) {
+            try {
+                return UUID.fromString(str);
+            } catch (Exception ignored) {
+                OfflinePlayer off = findKnownOfflinePlayer(str);
+                return off == null ? null : off.getUniqueId();
+            }
+        }
+        for (String methodName : List.of("getUniqueId", "getUniqueID", "getUUID", "getUuid")) {
+            try {
+                Method method = value.getClass().getMethod(methodName);
+                Object result = method.invoke(value);
+                UUID uuid = extractUuid(result);
+                if (uuid != null)
+                    return uuid;
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
+    }
+
+    private void openBedrockParty(Player player) {
+        Object party = getMMOCoreParty(player);
+        int max = getConfiguredPartyMaxMembers();
+        int count = countMMOCorePartyMembers(party);
+        List<String> members = getMMOCorePartyMemberNames(party);
+        StringBuilder content = new StringBuilder();
+        if (party == null) {
+            content.append(color("&7No perteneces a un Grupo de Aventura.\n&7Puedes crear uno aquí y luego invitar desde Amigos."));
+        } else {
+            content.append(color("&7Integrantes: &f" + count + "&7/&f" + max));
+            for (String member : members)
+                content.append("\n").append(color("&7• &f" + member));
+        }
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color("&d&lGrupo de Aventura"))
+                .content(content.toString());
+        List<Runnable> actions = new ArrayList<>();
+        if (party == null) {
+            builder.button(color("&aCrear Grupo de Aventura"));
+            actions.add(() -> {
+                try {
+                    Object data = getMMOCorePlayerData(player);
+                    Object created = createMMOCoreParty(data);
+                    if (created != null) {
+                        syncScoreboardPartyPermission(player);
+                        msg(player, "party-auto-created");
+                    } else {
+                        msg(player, "party-error");
+                    }
+                } catch (Throwable ex) {
+                    msg(player, "party-error");
+                }
+                openBedrockParty(player);
+            });
+        }
+        builder.button(color("&aInvitar desde Amigos"));
+        actions.add(() -> openBedrockFriends(player, 0));
+        builder.button(color("&6Volver"));
+        actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
     }
 
     private Inventory createMenu(String type, int size, String title, int page) {

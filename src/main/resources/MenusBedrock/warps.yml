@@ -1,0 +1,27 @@
+type: "SIMPLE"
+title: "&8&lLugares Disponibles"
+content:
+  - "&7Selecciona una opción."
+buttons:
+  survival:
+    text: "&a&lSurvival\n&7Viaja al mundo survival"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "survival"
+    close-on-click: true
+  lobby:
+    text: "&b&lLobby\n&7Regresa al lobby principal"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "lobby"
+    close-on-click: true
+  mercado:
+    text: "&e&lMercado\n&7Viaja a la zona de mercado"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "mercado"
+    close-on-click: true
+  volver:
+    text: "&6&lVolver\n&7Regresa al menú anterior."
+    action: "OPEN_MENU"
+    target-menu: "main"

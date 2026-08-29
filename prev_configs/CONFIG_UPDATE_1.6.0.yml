@@ -1,0 +1,9 @@
+# MDVSocial 1.6.0 - nuevas opciones de compatibilidad Bedrock.
+# Si mantienes tu config anterior, puedes añadir solo este bloque.
+# Los valores también tienen defaults internos, por lo que el plugin puede
+# funcionar aunque todavía no copies este bloque.
+
+bedrock:
+  enabled: true
+  fallback-to-java-menu: true
+  dynamic-page-size: 8

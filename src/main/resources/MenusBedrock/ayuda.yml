@@ -1,0 +1,69 @@
+type: "SIMPLE"
+title: "&8&lGuía de Ayuda"
+content:
+  - "&7Selecciona una opción."
+buttons:
+  ayuda_general:
+    text: "&d&lGuía de MDVCRAFT\n&7Consulta los sistemas básicos"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "ayuda"
+  economia:
+    text: "&e&lEconomía\n&7Dinero, pagos, depósitos"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "economia"
+  viajes:
+    text: "&a&lViajes\n&7Teletransportes, warps,"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "viajes"
+  hogares:
+    text: "&b&lHogares\n&7Crea y administra tus"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "hogares"
+  comercios:
+    text: "&2&lComercios\n&7Realiza tratos seguros"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "comercios"
+  protecciones:
+    text: "&9&lProtecciones\n&7Protege tu base y"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "prote"
+  recetas:
+    text: "&d&lRecetas y Crafteos\n&7Consulta recetas custom"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "recetas"
+  personaje:
+    text: "&e&lPersonaje\n&7Raza, atributos y perfil"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "perfil"
+  suministros:
+    text: "&b&lSuministros\n&7Revisa los kits disponibles"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "suministros"
+  warps:
+    text: "&3&lLugares Disponibles\n&7Consulta lugares principales"
+    action: "OPEN_MENU"
+    target-menu: "warps"
+  consejos:
+    text: "&6&lConsejos Rápidos\n&8Esta sección es informativa."
+  ayuda_clan:
+    text: "&5&lAyuda de Clanes\n&7Comandos principales para"
+    action: "OPEN_CONDITIONAL_MENU"
+    condition-placeholder: "%mdvclans_is_in_clan%"
+    condition-equals: "true"
+    true-menu: "clan_con_clan"
+    false-menu: "clan_sin_clan"
+  volver:
+    text: "&6&lVolver\n&7Regresa al menú anterior."
+    action: "BACK"
+  cerrar:
+    text: "&c&lCerrar\n&7Cierra este menú."
+    action: "CLOSE"

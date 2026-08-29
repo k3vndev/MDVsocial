@@ -450,6 +450,24 @@ homes-menu:
 # Clic normal: abre Menus/jugador_opciones.yml
 # Shift + clic: inserta /msg <jugador> en la barra del chat.
 # ==========================================================
+# ==========================================================
+# COMPATIBILIDAD BEDROCK - Geyser + Floodgate
+# ==========================================================
+bedrock:
+  # Detecta automáticamente jugadores Floodgate.
+  enabled: true
+
+  # Los jugadores Bedrock usan Forms nativos cargados desde:
+  # plugins/MDVSocial/MenusBedrock/
+
+  # Si falta un archivo en MenusBedrock, permite abrir temporalmente
+  # el inventario Java equivalente para no dejar al jugador bloqueado.
+  fallback-to-java-menu: true
+
+  # Cantidad de entradas por página en listas dinámicas (títulos, cartas, amigos).
+  # 8 mantiene botones grandes y cómodos en móvil y consola.
+  dynamic-page-size: 8
+
 interactive-chat:
   enabled: true
   options-menu: jugador_opciones

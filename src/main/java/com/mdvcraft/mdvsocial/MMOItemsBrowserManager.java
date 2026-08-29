@@ -19,6 +19,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,7 +132,152 @@ public final class MMOItemsBrowserManager implements Listener {
             return;
         }
         if (catalog.isEmpty()) reload();
+        if (plugin.isBedrockPlayer(player)) {
+            openBedrockTypes(player, 0);
+            return;
+        }
         openTypes(player, 1);
+    }
+
+    private void openBedrockTypes(Player player, int requestedPage) {
+        List<String> types = new ArrayList<>(catalog.keySet());
+        int perPage = Math.max(4, Math.min(15, plugin.getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int maxPage = Math.max(0, (int) Math.ceil(types.size() / (double) perPage) - 1);
+        int page = Math.max(0, Math.min(maxPage, requestedPage));
+        int start = page * perPage;
+        int end = Math.min(types.size(), start + perPage);
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color(config("titles.types", "&8Biblioteca de MMOItems &7({page}/{max_page})")
+                        .replace("{page}", String.valueOf(page + 1))
+                        .replace("{max_page}", String.valueOf(maxPage + 1))))
+                .content(color("&7Selecciona una categoría. La extracción sigue usando objetos base sin modificadores."));
+        List<Runnable> actions = new ArrayList<>();
+        for (int i = start; i < end; i++) {
+            String type = types.get(i);
+            builder.button(typeDisplay(type));
+            actions.add(() -> openBedrockItems(player, type, 0));
+        }
+        if (page > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockTypes(player, page - 1));
+        }
+        if (page < maxPage) {
+            builder.button(color("&aPágina siguiente"));
+            actions.add(() -> openBedrockTypes(player, page + 1));
+        }
+        builder.button(color("&6Volver a administración"));
+        actions.add(() -> plugin.openAdminMenu(player));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size()) actions.get(index).run();
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private void openBedrockItems(Player player, String rawType, int requestedPage) {
+        String type = normalize(rawType);
+        List<String> ids = catalog.get(type);
+        if (ids == null || ids.isEmpty()) {
+            message(player, "empty-type", "&cNo se encontraron objetos en esa categoría.");
+            openBedrockTypes(player, 0);
+            return;
+        }
+        int perPage = Math.max(4, Math.min(15, plugin.getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int maxPage = Math.max(0, (int) Math.ceil(ids.size() / (double) perPage) - 1);
+        int page = Math.max(0, Math.min(maxPage, requestedPage));
+        int start = page * perPage;
+        int end = Math.min(ids.size(), start + perPage);
+
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color(typeDisplay(type) + " &8(" + (page + 1) + "/" + (maxPage + 1) + ")"))
+                .content(color("&7Toca un objeto para elegir cuánto extraer."));
+        List<Runnable> actions = new ArrayList<>();
+        for (int i = start; i < end; i++) {
+            String id = ids.get(i);
+            ItemStack preview = buildBaseItemWithoutModifiers(type, id);
+            String display = bedrockItemDisplay(preview, id);
+            builder.button(color(display + "\n&8" + type + ":" + id));
+            actions.add(() -> openBedrockItemActions(player, type, id, page));
+        }
+        if (page > 0) {
+            builder.button(color("&ePágina anterior"));
+            actions.add(() -> openBedrockItems(player, type, page - 1));
+        }
+        if (page < maxPage) {
+            builder.button(color("&aPágina siguiente"));
+            actions.add(() -> openBedrockItems(player, type, page + 1));
+        }
+        builder.button(color("&6Volver a categorías"));
+        actions.add(() -> openBedrockTypes(player, 0));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size()) actions.get(index).run();
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private void openBedrockItemActions(Player player, String type, String id, int returnPage) {
+        ItemStack preview = buildBaseItemWithoutModifiers(type, id);
+        if (preview == null || preview.getType().isAir()) {
+            message(player, "item-build-failed", "&cNo se pudo generar ese objeto.");
+            openBedrockItems(player, type, returnPage);
+            return;
+        }
+        String display = bedrockItemDisplay(preview, id);
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(color(display))
+                .content(color("&8Tipo: &7" + type + "\n&8ID: &7" + id
+                        + "\n&8Generación: &7base, sin modificadores"))
+                .button(color("&aObtener 1"));
+        List<Runnable> actions = new ArrayList<>();
+        actions.add(() -> {
+            give(player, type, id, false);
+            openBedrockItemActions(player, type, id, returnPage);
+        });
+        if (preview.getMaxStackSize() > 1
+                && plugin.getConfig().getBoolean("mmoitems-browser.extraction.shift-click-enabled", true)) {
+            int amount = Math.min(Math.max(1,
+                    plugin.getConfig().getInt("mmoitems-browser.extraction.shift-click-amount", 64)),
+                    preview.getMaxStackSize());
+            builder.button(color("&eObtener " + amount));
+            actions.add(() -> {
+                give(player, type, id, true);
+                openBedrockItemActions(player, type, id, returnPage);
+            });
+        }
+        builder.button(color("&6Volver a objetos"));
+        actions.add(() -> openBedrockItems(player, type, returnPage));
+        builder.button(color("&cCerrar"));
+        actions.add(() -> { });
+        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size()) actions.get(index).run();
+        }));
+        sendBedrockForm(player, builder);
+    }
+
+    private String bedrockItemDisplay(ItemStack item, String id) {
+        if (item != null && item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null && meta.hasDisplayName() && meta.getDisplayName() != null && !meta.getDisplayName().isBlank())
+                return meta.getDisplayName();
+        }
+        return pretty(id);
+    }
+
+    private boolean sendBedrockForm(Player player, SimpleForm.Builder builder) {
+        try {
+            return FloodgateApi.getInstance().sendForm(player.getUniqueId(), builder);
+        } catch (Throwable ex) {
+            plugin.getLogger().warning("No se pudo enviar la biblioteca Bedrock a " + player.getName()
+                    + ": " + ex.getMessage());
+            return false;
+        }
     }
 
     private void openTypes(Player player, int requestedPage) {

@@ -281,3 +281,10 @@ if (action.equals("CLOSE")) {
     MDVSocialAPI.playUISound((Player) event.getWhoClicked(), "close");
 }
 ```
+
+## Bedrock / Geyser / Floodgate (1.6.0)
+
+MDVSocial 1.6.0 mantiene `Menus/` para Java y añade `MenusBedrock/` para clientes
+Bedrock detectados por Floodgate. Los menús Bedrock usan Forms nativos de
+Cumulus, mientras ambas interfaces reutilizan la misma lógica social y datos.
+Consulta `notes/UPDATE_1.6.0_NOTES.txt` para instalación y formato de configuración.

@@ -1,0 +1,44 @@
+type: "SIMPLE"
+title: "&8&l%mdvclans_tier_name% &8- &2&l%mdvclans_name%"
+content:
+  - "&7Gestiona las funciones sociales de tu clan."
+buttons:
+  resumen:
+    text: "&f&l%mdvclans_name% &8[&6%mdvclans_id%&8]\n&7Clan: &f%mdvclans_name%"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "clan chat"
+  miembros:
+    text: "&a&lMiembros\n&7Consulta los integrantes"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "clan menu miembros"
+  base:
+    text: "&5&lBases\n&7Accede a los puntos"
+    action: "COMMAND_PLAYER"
+    commands:
+      - "clan abrir bases"
+  relaciones:
+    text: "&9&lRelaciones\n&7Aliados, enemigos,"
+    action: "MDVCLANS_OPEN"
+    clans-menu: "relaciones"
+  info:
+    text: "&e&lTablero de información\n&7Mensaje del clan:"
+    action: "MDVCLANS_OPEN"
+    clans-menu: "info"
+  recursos:
+    text: "&6&lBanco y almacen\n&7Accede al banco y al"
+    action: "MDVCLANS_OPEN"
+    clans-menu: "almacen"
+  lista:
+    text: "&f&lLista de clanes\n&7Explora otros clanes"
+    action: "MDVCLANS_OPEN"
+    clans-menu: "lista"
+  ajustes:
+    text: "&c&lAjustes del clan\n&7Opciones de administracion"
+    action: "MDVCLANS_OPEN"
+    clans-menu: "ajustes"
+  volver:
+    text: "&6&lVolver\n&7Regresa al menú anterior."
+    action: "OPEN_MENU"
+    target-menu: "main"

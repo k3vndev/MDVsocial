@@ -1,0 +1,20 @@
+type: "SIMPLE"
+title: "&8&lCorreo"
+content:
+  - "&7Lee, envía y administra tus cartas."
+buttons:
+  bloquear:
+    text: "&c&lBloquear cartas\n&7Impide que un jugador"
+    action: "START_MAIL_BLOCK"
+    close-on-click: true
+  buzon:
+    text: "&6&lVer Cartas\n&7Revisa las cartas que"
+    action: "OPEN_MAILBOX"
+  desbloquear:
+    text: "&a&lDesbloquear jugador\n&7Permite que un jugador"
+    action: "START_MAIL_UNBLOCK"
+    close-on-click: true
+  volver:
+    text: "&6&lVolver\n&7Regresa al menú social."
+    action: "OPEN_MENU"
+    target-menu: "menuamigos"
