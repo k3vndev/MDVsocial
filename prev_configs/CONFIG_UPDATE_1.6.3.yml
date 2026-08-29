@@ -1,0 +1,20 @@
+# Nuevas opciones opcionales de MDVSocial 1.6.3.
+# No es obligatorio pegarlas: el plugin usa estos mismos valores por defecto.
+
+bedrock:
+  mobile-safety:
+    enabled: true
+    click-debounce-ms: 120
+    action-delay-ticks: 2
+    dynamic-page-size: 5
+
+  party:
+    direct-invite-command: 'party invite {target}'
+    java-fallback-buttons: true
+
+messages:
+  friend-removed: '&eEliminaste a &c{target} &ede tu lista de amigos.'
+  friend-remove-error: '&cNo se pudo eliminar a &e{target} &cde tus amigos.'
+  party-left: '&eSaliste de tu Grupo de Aventura.'
+  party-not-in-party: '&cNo perteneces a ningún Grupo de Aventura.'
+  party-leave-error: '&cNo se pudo abandonar el Grupo de Aventura.'

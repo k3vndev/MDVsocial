@@ -1,0 +1,42 @@
+type: "DYNAMIC_TITLES_HOME"
+title: "&6&lTítulos y Rangos"
+content:
+  - "&7Título equipado: &r{active_title}"
+  - "&8Selecciona una sección."
+
+buttons:
+  my-titles:
+    enabled: true
+    text: "&a&lMis Títulos\n&r&8Equipa los títulos que posees."
+    image:
+      type: "URL"
+      data: ""
+  shop:
+    enabled: true
+    text: "&6&lTienda de Títulos\n&r&8Compra nuevos títulos."
+    image:
+      type: "URL"
+      data: ""
+  locked:
+    enabled: true
+    text: "&c&lTítulos Bloqueados\n&r&8Consulta títulos por desbloquear."
+    image:
+      type: "URL"
+      data: ""
+  ranks:
+    enabled: true
+    text: "&b&lRangos\n&r&8Consulta tus rangos y requisitos."
+    image:
+      type: "URL"
+      data: ""
+  clear:
+    enabled: true
+    text: "&eQuitar título\n&r&8Restablece el título actual."
+    image:
+      type: "URL"
+      data: ""
+  back:
+    text: "&6Volver"
+    image:
+      type: "URL"
+      data: ""

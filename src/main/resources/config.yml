@@ -1,5 +1,5 @@
 # ==========================================================
-# MDVSocial 1.6.2
+# MDVSocial 1.6.3
 # Menu social + sistema de titulos cosmeticos para MDVCRAFT
 # ==========================================================
 
@@ -89,6 +89,11 @@ messages:
   party-request-denied: '&eRechazaste la invitación al grupo de &c{target}&e.'
   social-request-expired: '&cEsa solicitud ya expiró.'
   social-request-error: '&cNo se pudo procesar esa solicitud de MMOCore.'
+  friend-removed: '&eEliminaste a &c{target} &ede tu lista de amigos.'
+  friend-remove-error: '&cNo se pudo eliminar a &e{target} &cde tus amigos.'
+  party-left: '&eSaliste de tu Grupo de Aventura.'
+  party-not-in-party: '&cNo perteneces a ningún Grupo de Aventura.'
+  party-leave-error: '&cNo se pudo abandonar el Grupo de Aventura.'
   private-message-suggest: '&bHaz clic aquí para escribirle a &e{target}&b.'
 settings:
   # Menu inicial que abre /social.
@@ -478,9 +483,23 @@ bedrock:
   # el inventario Java equivalente para no dejar al jugador bloqueado.
   fallback-to-java-menu: true
 
-  # Cantidad de entradas por página en listas dinámicas (títulos, cartas, amigos).
-  # 8 mantiene botones grandes y cómodos en móvil y consola.
+  # Cantidad de entradas por página en listas dinámicas para PC/consola.
   dynamic-page-size: 8
+
+  # Protecciones para Forms en móvil/táctil. Reducen dobles pulsaciones y
+  # evitan listas demasiado largas que algunos clientes Bedrock manejan mal.
+  mobile-safety:
+    enabled: true
+    click-debounce-ms: 120
+    action-delay-ticks: 2
+    dynamic-page-size: 5
+
+  party:
+    # El formulario de "Invitar jugador" usa el comando oficial de MMOCore.
+    # Así el jugador Java recibe una PartyInvite normal y /party accept|deny funciona.
+    direct-invite-command: 'party invite {target}'
+    # Si el receptor es Java, añade botones clickables explícitos como respaldo.
+    java-fallback-buttons: true
 
 interactive-chat:
   enabled: true

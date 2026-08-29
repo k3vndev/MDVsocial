@@ -1,0 +1,27 @@
+MDVSocial 1.6.3 - ACTUALIZACION RAPIDA
+=====================================
+
+Servidor:
+1) Apaga el servidor.
+2) Haz backup de plugins/MDVSocial/.
+3) Compila este source con Java 21 + Maven/GitHub Actions.
+4) Reemplaza solo el JAR por MDVSocial-1.6.3.jar.
+5) Conserva tu carpeta plugins/MDVSocial/MenusBedrock/ actual.
+6) Enciende el servidor.
+
+Al arrancar, MDVSocial 1.6.3:
+- conserva tus textos e imágenes existentes,
+- agrega automáticamente las claves nuevas de amigo/party que falten,
+- crea titulos.yml, titulos_lista.yml y rangos.yml si no existen.
+
+Nuevos archivos editables:
+- MenusBedrock/titulos.yml
+- MenusBedrock/titulos_lista.yml
+- MenusBedrock/rangos.yml
+
+Cambios:
+- eliminar amigo desde Opciones de amigo,
+- salir de party desde Grupo de Aventura,
+- invitación escrita a party compatible con aceptación/rechazo Java,
+- protecciones de Forms para móvil/táctil,
+- Títulos/Rangos configurables con imágenes URL y overrides por ID.

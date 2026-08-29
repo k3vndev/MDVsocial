@@ -1,0 +1,31 @@
+MDVSocial 1.6.3 - Bedrock Social/Party + UI móvil
+=================================================
+
+Cambios principales (Bedrock):
+- La invitación escrita desde Grupo de Aventura usa el comando oficial de MMOCore
+  `party invite {target}` para generar la PartyInvite estándar. Esto mantiene
+  compatibles los botones/comandos /party accept y /party deny del jugador Java.
+- Opciones de amigo: nuevo botón Eliminar amigo con confirmación.
+- Grupo de Aventura: nuevo botón Salir del grupo con confirmación.
+- Protección móvil/táctil:
+  * debounce de respuestas de Forms para evitar doble ejecución,
+  * pequeño retraso seguro antes de navegar entre Forms,
+  * listas dinámicas más cortas (5 entradas) cuando Floodgate reporta touch/Android/iOS.
+- Los menús Bedrock de Títulos y Rangos ya son editables desde:
+  MenusBedrock/titulos.yml
+  MenusBedrock/titulos_lista.yml
+  MenusBedrock/rangos.yml
+- MenusBedrock se auto-actualiza por claves faltantes sin reemplazar textos,
+  imágenes ni URLs que ya hayas personalizado.
+
+Java:
+- No se cambia el diseño de inventarios Java.
+- Las PartyInvite enviadas desde el formulario de nombre Bedrock pasan por el
+  comando oficial de MMOCore para que Java pueda aceptar/rechazar normalmente.
+
+Actualización recomendada:
+1. Apagar servidor.
+2. Backup de plugins/MDVSocial/.
+3. Reemplazar solamente el JAR por MDVSocial-1.6.3.jar.
+4. NO borrar MenusBedrock. Al arrancar se agregarán solo archivos/claves nuevas.
+5. Reiniciar completo; no usar /reload.

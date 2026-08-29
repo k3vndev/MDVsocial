@@ -92,6 +92,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private final Map<UUID, MailComposeSession> mailSessions = new ConcurrentHashMap<>();
     private final Map<UUID, PermissionAttachment> scoreboardPartyAttachments = new ConcurrentHashMap<>();
     private final Map<UUID, ChatProfileSnapshot> interactiveChatProfiles = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> bedrockUiLastAction = new ConcurrentHashMap<>();
     private final LegacyComponentSerializer legacyAmpersand = LegacyComponentSerializer.legacyAmpersand();
     private BukkitTask interactiveChatProfileTask;
     private volatile boolean interactiveChatEnabled;
@@ -196,7 +197,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         mmoItemsBrowserManager.enable();
         startInteractiveChatProfileTask();
 
-        getLogger().info("MDVSocial 1.6.2 habilitado. Bedrock sin botones Cerrar + player-data SQLite.");
+        getLogger().info("MDVSocial 1.6.3 habilitado. Bedrock social/party móvil + títulos/rangos editables.");
     }
 
     @Override
@@ -1980,6 +1981,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                     context.targetName, context.menuId.isBlank() ? "correo" : context.menuId, context.page);
             case "INVITE_PARTY_TARGET" -> inviteFriendToParty(player, context.targetUuid, context.targetName);
             case "INVITE_FRIEND_TARGET" -> inviteMMOCoreFriend(player, context.targetUuid, context.targetName);
+            case "REMOVE_FRIEND_TARGET" -> openBedrockRemoveFriendConfirm(player, context.targetUuid,
+                    context.targetName, context.targetOnline);
             case "SUGGEST_MSG_TARGET" -> openBedrockPrivateMessage(player, context.targetName, context);
             case "START_MAIL_BLOCK" -> startMailBlockPrompt(player, true,
                     context.menuId.isBlank() ? "correo" : context.menuId, context.page);
@@ -3786,102 +3789,152 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openBedrockTitlesHome(Player player) {
+        YamlConfiguration ui = bedrockDynamicUi("titulos");
         String activeId = getActiveTitleId(player.getUniqueId());
         TitleDef active = titles.get(activeId);
-        String activeName = active == null ? getConfig().getString("settings.default-title", "forastero") : active.display;
-        String title = color(getMenuTitle("titles"));
-        String content = color("&7Título equipado: &r" + activeName + "\n&7Elige una categoría.");
+        String activeName = active == null
+                ? getConfig().getString("settings.default-title", "forastero")
+                : active.display;
+        Map<String, String> tokens = Map.of(
+                "active_title", activeName == null ? "" : activeName,
+                "active_title_id", activeId == null ? "" : activeId);
 
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(title)
-                .content(content)
-                .button(bedrockConfiguredButtonText("titles-menu.my-titles", "&aMis títulos"))
-                .button(bedrockConfiguredButtonText("titles-menu.shop", "&6Tienda de títulos"))
-                .button(bedrockConfiguredButtonText("titles-menu.locked", "&cTítulos bloqueados"))
-                .button(bedrockConfiguredButtonText("titles-menu.ranks", "&bRangos"))
-                .button(bedrockConfiguredButtonText("items.clear-title", "&eQuitar título"))
-                .button(bedrockConfiguredButtonText("items.back", "&6Volver"));
+                .title(bedrockUiText(ui, "title", "&6&lTítulos y Rangos", player, tokens))
+                .content(bedrockUiLines(ui, "content",
+                        List.of("&7Título equipado: &r{active_title}", "&7Elige una categoría."), player, tokens));
+        List<Runnable> actions = new ArrayList<>();
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
-            switch (response.clickedButtonId()) {
-                case 0 -> openBedrockTitleList(player, "MY_TITLES", 0);
-                case 1 -> openBedrockTitleList(player, "SHOP", 0);
-                case 2 -> openBedrockTitleList(player, "LOCKED", 0);
-                case 3 -> openBedrockRanks(player, 0);
-                case 4 -> {
-                    clearActiveTitle(player);
-                    openBedrockTitlesHome(player);
-                }
-                case 5 -> openSocialStart(player);
-                default -> { }
-            }
+        if (ui.getBoolean("buttons.my-titles.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.my-titles",
+                    bedrockUiText(ui, "buttons.my-titles.text", "&a&lMis títulos", player, tokens));
+            actions.add(() -> openBedrockTitleList(player, "MY_TITLES", 0));
+        }
+        if (ui.getBoolean("buttons.shop.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.shop",
+                    bedrockUiText(ui, "buttons.shop.text", "&6&lTienda de títulos", player, tokens));
+            actions.add(() -> openBedrockTitleList(player, "SHOP", 0));
+        }
+        if (ui.getBoolean("buttons.locked.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.locked",
+                    bedrockUiText(ui, "buttons.locked.text", "&c&lTítulos bloqueados", player, tokens));
+            actions.add(() -> openBedrockTitleList(player, "LOCKED", 0));
+        }
+        if (ui.getBoolean("buttons.ranks.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.ranks",
+                    bedrockUiText(ui, "buttons.ranks.text", "&b&lRangos", player, tokens));
+            actions.add(() -> openBedrockRanks(player, 0));
+        }
+        if (ui.getBoolean("buttons.clear.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.clear",
+                    bedrockUiText(ui, "buttons.clear.text", "&eQuitar título", player, tokens));
+            actions.add(() -> {
+                clearActiveTitle(player);
+                openBedrockTitlesHome(player);
+            });
+        }
+        addBedrockDynamicButton(builder, ui, "buttons.back",
+                bedrockUiText(ui, "buttons.back.text", "&6Volver", player, tokens));
+        actions.add(() -> openSocialStart(player));
+
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
+            int index = response.clickedButtonId();
+            if (index >= 0 && index < actions.size())
+                actions.get(index).run();
         }));
         sendBedrockSimpleForm(player, builder);
     }
 
     private void openBedrockTitleList(Player player, String type, int page) {
-        String menuKey = switch (type) {
-            case "MY_TITLES" -> "my-titles";
-            case "SHOP" -> "title-shop";
-            case "LOCKED" -> "locked-titles";
+        YamlConfiguration ui = bedrockDynamicUi("titulos_lista");
+        String section = switch (type) {
+            case "SHOP" -> "shop";
+            case "LOCKED" -> "locked";
             default -> "my-titles";
         };
         List<TitleDef> list = filteredTitles(player, type);
         list.sort(Comparator.comparing(t -> stripColor(t.display)));
 
-        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int perPage = getBedrockDynamicPageSize(player);
         int maxPage = Math.max(0, (int) Math.ceil(list.size() / (double) perPage) - 1);
         int safePage = Math.max(0, Math.min(page, maxPage));
         int start = safePage * perPage;
         int end = Math.min(list.size(), start + perPage);
+        Map<String, String> pageTokens = Map.of(
+                "page", String.valueOf(safePage + 1),
+                "max_page", String.valueOf(maxPage + 1),
+                "count", String.valueOf(list.size()));
 
-        String header = color(getMenuTitle(menuKey)) + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")";
-        String content = list.isEmpty()
-                ? color("&7No hay títulos en esta categoría.")
-                : color("&7Selecciona un título para ver/aplicar su acción.");
-        SimpleForm.Builder builder = SimpleForm.builder().title(header).content(content);
+        String base = "sections." + section;
+        String defaultTitle = switch (type) {
+            case "SHOP" -> "&6&lTienda de Títulos &8({page}/{max_page})";
+            case "LOCKED" -> "&c&lTítulos Bloqueados &8({page}/{max_page})";
+            default -> "&a&lMis Títulos &8({page}/{max_page})";
+        };
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(bedrockUiText(ui, base + ".title", defaultTitle, player, pageTokens))
+                .content(list.isEmpty()
+                        ? bedrockUiText(ui, base + ".empty", "&7No hay títulos en esta categoría.", player, pageTokens)
+                        : bedrockUiLines(ui, base + ".content", List.of("&7Selecciona un título."), player, pageTokens));
         List<Runnable> actions = new ArrayList<>();
 
         for (int i = start; i < end; i++) {
             TitleDef title = list.get(i);
-            StringBuilder text = new StringBuilder(color(title.display));
+            boolean active = getActiveTitleId(player.getUniqueId()).equals(title.id);
+            String status;
+            String requirement = title.unlockPermission == null || title.unlockPermission.isBlank()
+                    ? "&cBloqueado" : "&cRequiere: &7" + title.unlockPermission;
+            if (type.equals("MY_TITLES")) status = active ? "&aEquipado" : "&eToca para equipar";
+            else if (type.equals("SHOP")) status = "&6" + formatPrice(title.price) + " monedas";
+            else status = requirement;
+
+            Map<String, String> tokens = new HashMap<>(pageTokens);
+            tokens.put("title_id", title.id);
+            tokens.put("title_display", title.display);
+            tokens.put("price", formatPrice(title.price));
+            tokens.put("status", status);
+            tokens.put("requirement", requirement);
+            tokens.put("active", active ? "true" : "false");
+            String genericEntryPath = base + ".entry";
+            String specificEntryPath = "titles." + title.id;
+            String entryPath = ui.isConfigurationSection(specificEntryPath) ? specificEntryPath : genericEntryPath;
+            String genericTemplate = ui.getString(genericEntryPath + ".text", "{title_display}\n{status}");
+            String text = bedrockUiText(ui, entryPath + ".text", genericTemplate, player, tokens);
+            addBedrockDynamicButton(builder, ui, entryPath, text);
+
             if (type.equals("MY_TITLES")) {
-                boolean active = getActiveTitleId(player.getUniqueId()).equals(title.id);
-                text.append("\n").append(color(active ? "&aEquipado" : "&eToca para equipar"));
                 actions.add(() -> {
                     equipTitle(player, title.id);
                     openBedrockTitleList(player, type, safePage);
                 });
             } else if (type.equals("SHOP")) {
-                text.append("\n").append(color("&6" + formatPrice(title.price) + " monedas"));
                 actions.add(() -> {
                     buyTitle(player, title.id);
                     openBedrockTitleList(player, type, safePage);
                 });
             } else {
-                String req = title.unlockPermission == null || title.unlockPermission.isBlank()
-                        ? "&cBloqueado" : "&cRequiere: &7" + title.unlockPermission;
-                text.append("\n").append(color(req));
                 actions.add(() -> {
                     msg(player, "title-locked");
                     openBedrockTitleList(player, type, safePage);
                 });
             }
-            builder.button(text.toString());
         }
 
         if (safePage > 0) {
-            builder.button(color("&ePágina anterior"));
+            addBedrockDynamicButton(builder, ui, "buttons.previous",
+                    bedrockUiText(ui, "buttons.previous.text", "&ePágina anterior", player, pageTokens));
             actions.add(() -> openBedrockTitleList(player, type, safePage - 1));
         }
         if (safePage < maxPage) {
-            builder.button(color("&ePágina siguiente"));
+            addBedrockDynamicButton(builder, ui, "buttons.next",
+                    bedrockUiText(ui, "buttons.next.text", "&ePágina siguiente", player, pageTokens));
             actions.add(() -> openBedrockTitleList(player, type, safePage + 1));
         }
-        builder.button(color("&6Volver a Títulos"));
+        addBedrockDynamicButton(builder, ui, "buttons.back",
+                bedrockUiText(ui, "buttons.back.text", "&6Volver a Títulos", player, pageTokens));
         actions.add(() -> openBedrockTitlesHome(player));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
@@ -3890,36 +3943,52 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void openBedrockRanks(Player player, int page) {
+        YamlConfiguration ui = bedrockDynamicUi("rangos");
         Map<Integer, Map<Integer, RankDef>> layout = buildRankLayout();
         int maxPage = Math.max(0, layout.keySet().stream().max(Integer::compareTo).orElse(0));
         int safePage = Math.max(0, Math.min(page, maxPage));
         Map<Integer, RankDef> current = layout.getOrDefault(safePage, Collections.emptyMap());
+        Map<String, String> pageTokens = Map.of(
+                "page", String.valueOf(safePage + 1),
+                "max_page", String.valueOf(maxPage + 1));
 
         SimpleForm.Builder builder = SimpleForm.builder()
-                .title(color(getMenuTitle("ranks")) + " §8(" + (safePage + 1) + "/" + (maxPage + 1) + ")")
-                .content(color("&7Tus rangos y requisitos actuales."));
+                .title(bedrockUiText(ui, "title", "&b&lRangos &8({page}/{max_page})", player, pageTokens))
+                .content(bedrockUiLines(ui, "content", List.of("&7Tus rangos y requisitos actuales."), player, pageTokens));
         List<Runnable> actions = new ArrayList<>();
 
         current.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
             RankDef rank = entry.getValue();
             boolean owned = rank.permission == null || rank.permission.isBlank() || player.hasPermission(rank.permission);
-            String status = owned ? "&aObtenido" : "&cNo obtenido";
-            builder.button(color(rank.display + "\n" + status));
+            Map<String, String> tokens = new HashMap<>(pageTokens);
+            tokens.put("rank_id", rank.id);
+            tokens.put("rank_display", rank.display);
+            tokens.put("permission", rank.permission == null ? "" : rank.permission);
+            tokens.put("status", owned ? "&aObtenido" : "&cNo obtenido");
+            String path = owned ? "rank.owned" : "rank.locked";
+            String specificPath = "ranks." + rank.id;
+            String entryPath = ui.isConfigurationSection(specificPath) ? specificPath : path;
+            String genericTemplate = ui.getString(path + ".text", "{rank_display}\n{status}");
+            addBedrockDynamicButton(builder, ui, entryPath,
+                    bedrockUiText(ui, entryPath + ".text", genericTemplate, player, tokens));
             actions.add(() -> openBedrockRanks(player, safePage));
         });
 
         if (safePage > 0) {
-            builder.button(color("&ePágina anterior"));
+            addBedrockDynamicButton(builder, ui, "buttons.previous",
+                    bedrockUiText(ui, "buttons.previous.text", "&ePágina anterior", player, pageTokens));
             actions.add(() -> openBedrockRanks(player, safePage - 1));
         }
         if (safePage < maxPage) {
-            builder.button(color("&ePágina siguiente"));
+            addBedrockDynamicButton(builder, ui, "buttons.next",
+                    bedrockUiText(ui, "buttons.next.text", "&ePágina siguiente", player, pageTokens));
             actions.add(() -> openBedrockRanks(player, safePage + 1));
         }
-        builder.button(color("&6Volver a Títulos"));
+        addBedrockDynamicButton(builder, ui, "buttons.back",
+                bedrockUiText(ui, "buttons.back.text", "&6Volver a Títulos", player, pageTokens));
         actions.add(() -> openBedrockTitlesHome(player));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
@@ -3937,7 +4006,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return;
         }
         List<String> ids = getMailIds(player.getUniqueId());
-        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int perPage = getBedrockDynamicPageSize(player);
         int maxPage = Math.max(0, (int) Math.ceil(ids.size() / (double) perPage) - 1);
         int safePage = Math.max(0, Math.min(page, maxPage));
         int start = safePage * perPage;
@@ -3972,7 +4041,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         builder.button(color("&6Volver a Correo"));
         actions.add(() -> openCustomMenu(player, "correo", 1, "menuamigos", 1));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
@@ -4028,7 +4097,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         builder.button(color("&6Volver al buzón"));
         actions.add(() -> openBedrockMailbox(player, page));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
@@ -4042,7 +4111,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 .content(color("&7¿Seguro que quieres eliminar esta carta?"))
                 .button(color("&cSí, eliminar"))
                 .button(color("&aNo, volver"));
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             if (response.clickedButtonId() == 0) {
                 deleteMail(player, id);
                 openBedrockMailbox(player, page);
@@ -4063,12 +4132,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         CustomForm.Builder builder = CustomForm.builder()
                 .title(color("&b&lMensaje para &f" + safeName))
                 .input(color("&eMensaje"), "Escribe tu mensaje privado...", "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this, () ->
-                openCustomMenu(player, context.menuId, context.page, context.previousMenu, context.previousPage,
-                        context.targetUuid, context.targetName, context.targetOnline)));
         builder.validResultHandler(response -> {
             String message = response.asInput(0);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 if (message == null || message.isBlank()) {
                     openCustomMenu(player, context.menuId, context.page, context.previousMenu, context.previousPage,
                             context.targetUuid, context.targetName, context.targetOnline);
@@ -4093,12 +4159,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 .title(color("&6&lEnviar carta"))
                 .input(color("&eDestinatario"), "Nombre del jugador", "")
                 .input(color("&eMensaje"), "Escribe tu carta...", "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
-                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
         builder.validResultHandler(response -> {
             String target = response.asInput(0);
             String message = response.asInput(1);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 if (target == null || target.isBlank()) {
                     msg(player, "mail-player-not-found");
                     openBedrockMailCompose(player, returnMenu, returnPage);
@@ -4138,11 +4202,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         CustomForm.Builder builder = CustomForm.builder()
                 .title(color("&6&lCarta para &f" + safeTargetName))
                 .input(color("&eMensaje &7(máx. " + getMaxMailLength() + ")"), "Escribe tu carta...", "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
-                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
         builder.validResultHandler(response -> {
             String message = response.asInput(0);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 sendMailByUuid(player, targetUuid, safeTargetName, message == null ? "" : message.trim());
                 returnFromBedrockMail(player, returnMenu, returnPage);
             });
@@ -4154,11 +4216,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         CustomForm.Builder builder = CustomForm.builder()
                 .title(color(block ? "&c&lBloquear cartas" : "&a&lDesbloquear cartas"))
                 .input(color("&eJugador"), "Nombre del jugador", "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
-                () -> returnFromBedrockMail(player, returnMenu, returnPage)));
         builder.validResultHandler(response -> {
             String target = response.asInput(0);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 if (target == null || target.isBlank()) {
                     returnFromBedrockMail(player, returnMenu, returnPage);
                     return;
@@ -4217,7 +4277,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return off.getName() == null ? uuid.toString() : off.getName().toLowerCase(Locale.ROOT);
         }));
         List<Object> pending = getMMOCorePendingRequests(player, "FriendRequest");
-        int perPage = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        int perPage = getBedrockDynamicPageSize(player);
         int maxPage = Math.max(0, (int) Math.ceil(friends.size() / (double) perPage) - 1);
         int safePage = Math.max(0, Math.min(page, maxPage));
         int start = safePage * perPage;
@@ -4276,7 +4336,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 bedrockUiText(ui, "buttons.back.text", "&6Volver", player, tokens));
         actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
@@ -4290,11 +4350,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 .title(bedrockUiText(ui, "add-form.title", "&a&lAñadir amigo", player, Map.of()))
                 .input(bedrockUiText(ui, "add-form.input-label", "&eNombre del jugador", player, Map.of()),
                         stripBedrockFormatting(ui.getString("add-form.input-placeholder", "Escribe el nombre...")), "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this,
-                () -> openBedrockFriends(player, returnPage)));
         builder.validResultHandler(response -> {
             String rawName = response.asInput(0);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 Player target = findOnlinePlayerIgnoreCase(rawName);
                 if (target == null) {
                     msg(player, "friend-target-not-found");
@@ -4328,7 +4386,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "requests-menu.back",
                 bedrockUiText(ui, "requests-menu.back", "&6Volver a Amigos", player, tokens));
         actions.add(() -> openBedrockFriends(player, returnPage));
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
         }));
@@ -4349,7 +4407,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 bedrockUiText(ui, "requests-menu.detail.deny", "&cRechazar solicitud", player, tokens));
         addBedrockDynamicButton(builder, ui, "requests-menu.detail.back",
                 bedrockUiText(ui, "requests-menu.detail.back", "&6Volver", player, tokens));
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index == 0) {
                 resolveMMOCoreRequest(player, request, true);
@@ -4359,6 +4417,39 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 openBedrockFriendRequests(player, returnPage);
             } else {
                 openBedrockFriendRequests(player, returnPage);
+            }
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockRemoveFriendConfirm(Player player, UUID targetUuid, String targetName,
+                                                   boolean targetOnline) {
+        if (targetUuid == null) {
+            msg(player, "social-target-not-found");
+            return;
+        }
+        YamlConfiguration ui = bedrockDynamicUi("amigo_opciones");
+        String name = targetName == null || targetName.isBlank()
+                ? Bukkit.getOfflinePlayer(targetUuid).getName()
+                : targetName;
+        if (name == null || name.isBlank()) name = targetUuid.toString().substring(0, 8);
+        Map<String, String> tokens = Map.of("target", name);
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(bedrockUiText(ui, "remove-friend-confirm.title", "&c&lEliminar a {target}", player, tokens))
+                .content(bedrockUiText(ui, "remove-friend-confirm.content",
+                        "&7¿Seguro que quieres eliminar a &f{target} &7de tus amigos?", player, tokens));
+        addBedrockDynamicButton(builder, ui, "remove-friend-confirm.confirm",
+                bedrockUiText(ui, "remove-friend-confirm.confirm.text", "&cEliminar amigo", player, tokens));
+        addBedrockDynamicButton(builder, ui, "remove-friend-confirm.back",
+                bedrockUiText(ui, "remove-friend-confirm.back.text", "&6Volver", player, tokens));
+        String finalName = name;
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
+            if (response.clickedButtonId() == 0) {
+                removeMMOCoreFriend(player, targetUuid, finalName);
+                openBedrockFriends(player, 0);
+            } else {
+                openCustomMenu(player, "amigo_opciones", 1, "menuamigos", 1,
+                        targetUuid, finalName, targetOnline);
             }
         }));
         sendBedrockSimpleForm(player, builder);
@@ -4521,14 +4612,40 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                     bedrockUiText(ui, "buttons.requests.text", "&eInvitaciones ({request_count})", player, tokens));
             actions.add(() -> openBedrockPartyRequests(player));
         }
+        if (party != null && ui.getBoolean("buttons.leave.enabled", true)) {
+            addBedrockDynamicButton(builder, ui, "buttons.leave",
+                    bedrockUiText(ui, "buttons.leave.text", "&c&lSalir del grupo", player, tokens));
+            actions.add(() -> openBedrockPartyLeaveConfirm(player));
+        }
         addBedrockDynamicButton(builder, ui, "buttons.back",
                 bedrockUiText(ui, "buttons.back.text", "&6Volver", player, tokens));
         actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
 
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size())
                 actions.get(index).run();
+        }));
+        sendBedrockSimpleForm(player, builder);
+    }
+
+    private void openBedrockPartyLeaveConfirm(Player player) {
+        YamlConfiguration ui = bedrockDynamicUi("party");
+        SimpleForm.Builder builder = SimpleForm.builder()
+                .title(bedrockUiText(ui, "leave-confirm.title", "&c&lSalir del Grupo", player, Map.of()))
+                .content(bedrockUiText(ui, "leave-confirm.content",
+                        "&7¿Seguro que quieres abandonar tu Grupo de Aventura?", player, Map.of()));
+        addBedrockDynamicButton(builder, ui, "leave-confirm.confirm",
+                bedrockUiText(ui, "leave-confirm.confirm.text", "&cSí, salir del grupo", player, Map.of()));
+        addBedrockDynamicButton(builder, ui, "leave-confirm.back",
+                bedrockUiText(ui, "leave-confirm.back.text", "&6Volver", player, Map.of()));
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
+            if (response.clickedButtonId() == 0) {
+                leaveMMOCoreParty(player);
+                openBedrockParty(player);
+            } else {
+                openBedrockParty(player);
+            }
         }));
         sendBedrockSimpleForm(player, builder);
     }
@@ -4539,17 +4656,16 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 .title(bedrockUiText(ui, "invite-form.title", "&d&lInvitar al Grupo", player, Map.of()))
                 .input(bedrockUiText(ui, "invite-form.input-label", "&eNombre del jugador", player, Map.of()),
                         stripBedrockFormatting(ui.getString("invite-form.input-placeholder", "Escribe el nombre...")), "");
-        builder.closedResultHandler(() -> Bukkit.getScheduler().runTask(this, () -> openBedrockParty(player)));
         builder.validResultHandler(response -> {
             String rawName = response.asInput(0);
-            Bukkit.getScheduler().runTask(this, () -> {
+            runBedrockUiAction(player, () -> {
                 Player target = findOnlinePlayerIgnoreCase(rawName);
                 if (target == null) {
                     msg(player, "party-target-not-found");
                     openBedrockPartyInviteForm(player);
                     return;
                 }
-                inviteFriendToParty(player, target.getUniqueId(), target.getName());
+                invitePlayerToPartyFromBedrockForm(player, target);
                 openBedrockParty(player);
             });
         });
@@ -4576,7 +4692,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "requests-menu.back",
                 bedrockUiText(ui, "requests-menu.back", "&6Volver al Grupo", player, tokens));
         actions.add(() -> openBedrockParty(player));
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
         }));
@@ -4597,7 +4713,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 bedrockUiText(ui, "requests-menu.detail.deny", "&cRechazar invitación", player, tokens));
         addBedrockDynamicButton(builder, ui, "requests-menu.detail.back",
                 bedrockUiText(ui, "requests-menu.detail.back", "&6Volver", player, tokens));
-        builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
+        builder.validResultHandler(response -> runBedrockUiAction(player, () -> {
             int index = response.clickedButtonId();
             if (index == 0) {
                 if (resolveMMOCoreRequest(player, request, true)) {
@@ -4619,6 +4735,46 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             }
         }));
         sendBedrockSimpleForm(player, builder);
+    }
+
+    void runBedrockUiAction(Player player, Runnable action) {
+        if (player == null || action == null || !player.isOnline()) return;
+        long now = System.currentTimeMillis();
+        long debounce = Math.max(0L, getConfig().getLong("bedrock.mobile-safety.click-debounce-ms", 120L));
+        Long previous = bedrockUiLastAction.put(player.getUniqueId(), now);
+        if (previous != null && now - previous < debounce) return;
+        long delay = Math.max(0L, getConfig().getLong("bedrock.mobile-safety.action-delay-ticks", 2L));
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (player.isOnline()) action.run();
+        }, delay);
+    }
+
+    private int getBedrockDynamicPageSize(Player player) {
+        int standard = Math.max(4, Math.min(15, getConfig().getInt("bedrock.dynamic-page-size", 8)));
+        if (!getConfig().getBoolean("bedrock.mobile-safety.enabled", true) || !isBedrockTouchClient(player))
+            return standard;
+        return Math.max(4, Math.min(10, getConfig().getInt("bedrock.mobile-safety.dynamic-page-size", 5)));
+    }
+
+    private boolean isBedrockTouchClient(Player player) {
+        if (player == null || !isBedrockPlayer(player)) return false;
+        try {
+            Object floodgatePlayer = FloodgateApi.getInstance().getPlayer(player.getUniqueId());
+            if (floodgatePlayer == null) return false;
+            for (String methodName : List.of("getInputMode", "getDeviceOs", "getDeviceOS")) {
+                try {
+                    Method method = floodgatePlayer.getClass().getMethod(methodName);
+                    Object value = method.invoke(floodgatePlayer);
+                    String name = value == null ? "" : value.toString().toUpperCase(Locale.ROOT);
+                    if (name.contains("TOUCH") || name.contains("ANDROID") || name.contains("IOS")
+                            || name.contains("FIRE_OS") || name.contains("FIREOS"))
+                        return true;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
     }
 
     private YamlConfiguration bedrockDynamicUi(String menuId) {
@@ -5004,6 +5160,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         interactiveChatProfiles.remove(player.getUniqueId());
+        bedrockUiLastAction.remove(player.getUniqueId());
         if (!getConfig().getBoolean("scoreboard-party-permission.enabled", true))
             return;
         setScoreboardPartyPermission(player, false);
@@ -6064,6 +6221,169 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
     }
 
+    private void invitePlayerToPartyFromBedrockForm(Player player, Player target) {
+        if (player == null || target == null) return;
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            msg(player, "party-self");
+            return;
+        }
+        if (!Bukkit.getPluginManager().isPluginEnabled("MMOCore")) {
+            msg(player, "party-mmocore-missing");
+            return;
+        }
+        // El formulario de Grupo de Aventura debe ser autocontenido: si aún no hay
+        // party, creamos una party registrada antes de ejecutar el comando oficial.
+        if (getMMOCoreParty(player) == null) {
+            try {
+                Object data = getMMOCorePlayerData(player);
+                Object created = createMMOCoreParty(data);
+                if (created == null) {
+                    msg(player, "party-error");
+                    return;
+                }
+                syncScoreboardPartyPermission(player);
+                msg(player, "party-auto-created");
+            } catch (Throwable ex) {
+                getLogger().warning("No se pudo crear party para invitación Bedrock: " + ex.getMessage());
+                msg(player, "party-error");
+                return;
+            }
+        }
+        String template = getConfig().getString("bedrock.party.direct-invite-command", "party invite {target}");
+        String command = (template == null ? "party invite {target}" : template)
+                .replace("{target}", target.getName())
+                .trim();
+        if (command.startsWith("/")) command = command.substring(1);
+        boolean dispatched = false;
+        try {
+            dispatched = Bukkit.dispatchCommand(player, command);
+        } catch (Throwable ex) {
+            getLogger().fine("No se pudo usar el comando oficial de party: " + ex.getMessage());
+        }
+
+        // Verificamos que MMOCore haya registrado realmente la PartyInvite. Un comando
+        // puede devolver true aunque otra versión cambie su sintaxis. Si no existe la
+        // request, usamos el puente API/reflection que ya funciona desde Amigos.
+        boolean requestCreated = hasPendingMMOCoreRequestFrom(target, "PartyInvite", player.getUniqueId());
+        if (!dispatched || !requestCreated) {
+            inviteFriendToParty(player, target.getUniqueId(), target.getName());
+            requestCreated = hasPendingMMOCoreRequestFrom(target, "PartyInvite", player.getUniqueId());
+        } else {
+            syncScoreboardPartyPermission(player);
+        }
+
+        // Para Java añadimos una línea de compatibilidad con comandos explícitos. Esto
+        // evita depender de cómo el cliente renderice el JSON clickable de MMOCore.
+        if (requestCreated && !isBedrockPlayer(target)
+                && getConfig().getBoolean("bedrock.party.java-fallback-buttons", true))
+            sendJavaPartyInviteFallbackControls(target, player);
+    }
+
+    private boolean hasPendingMMOCoreRequestFrom(Player target, String simpleClassName, UUID creatorUuid) {
+        if (target == null || creatorUuid == null) return false;
+        for (Object request : getMMOCorePendingRequests(target, simpleClassName)) {
+            try {
+                Method getCreator = request.getClass().getMethod("getCreator");
+                UUID uuid = extractUuid(getCreator.invoke(request));
+                if (creatorUuid.equals(uuid)) return true;
+            } catch (Throwable ignored) {
+                String creator = getMMOCoreRequestCreatorName(request);
+                OfflinePlayer off = Bukkit.getOfflinePlayer(creatorUuid);
+                if (off.getName() != null && off.getName().equalsIgnoreCase(creator)) return true;
+            }
+        }
+        return false;
+    }
+
+    private void sendJavaPartyInviteFallbackControls(Player target, Player inviter) {
+        if (target == null || inviter == null || !target.isOnline()) return;
+        String uuid = inviter.getUniqueId().toString();
+        Component prefix = legacyAmpersand.deserialize("&d[Grupo] &f" + inviter.getName()
+                + " &7te invitó. ");
+        Component accept = legacyAmpersand.deserialize("&8[&a&lACEPTAR&8]")
+                .clickEvent(ClickEvent.runCommand("/party accept " + uuid))
+                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&aAceptar invitación")));
+        Component deny = legacyAmpersand.deserialize(" &8[&c&lRECHAZAR&8]")
+                .clickEvent(ClickEvent.runCommand("/party deny " + uuid))
+                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&cRechazar invitación")));
+        target.sendMessage(prefix.append(accept).append(deny));
+    }
+
+    private boolean removeMMOCoreFriend(Player player, UUID targetUuid, String fallbackName) {
+        if (player == null || targetUuid == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore")) {
+            msg(player, "friend-error");
+            return false;
+        }
+        String targetName = fallbackName == null || fallbackName.isBlank()
+                ? Bukkit.getOfflinePlayer(targetUuid).getName() : fallbackName;
+        if (targetName == null || targetName.isBlank()) targetName = "jugador";
+        try {
+            Class<?> playerDataClass = Class.forName("net.Indyuce.mmocore.api.player.PlayerData");
+            Method getData = playerDataClass.getMethod("get", OfflinePlayer.class);
+            Method removeFriend = playerDataClass.getMethod("removeFriend", UUID.class);
+            Object playerData = getData.invoke(null, player);
+            if (playerData == null) throw new IllegalStateException("PlayerData no disponible");
+            removeFriend.invoke(playerData, targetUuid);
+
+            // MMOCore almacena amistad de forma recíproca. Actualizamos también al otro
+            // jugador, incluso si está desconectado, mediante PlayerData#get(OfflinePlayer).
+            try {
+                OfflinePlayer other = Bukkit.getOfflinePlayer(targetUuid);
+                Object targetData = getData.invoke(null, other);
+                if (targetData != null)
+                    removeFriend.invoke(targetData, player.getUniqueId());
+            } catch (Throwable ex) {
+                getLogger().fine("No se pudo limpiar la amistad recíproca offline: " + ex.getMessage());
+            }
+            msg(player, "friend-removed", Map.of("target", targetName));
+            return true;
+        } catch (Throwable ex) {
+            getLogger().warning("No se pudo eliminar amistad MMOCore: "
+                    + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            msg(player, "friend-remove-error", Map.of("target", targetName));
+            return false;
+        }
+    }
+
+    private boolean leaveMMOCoreParty(Player player) {
+        if (player == null || !Bukkit.getPluginManager().isPluginEnabled("MMOCore")) {
+            msg(player, "party-mmocore-missing");
+            return false;
+        }
+        try {
+            Object playerData = getMMOCorePlayerData(player);
+            if (playerData == null) throw new IllegalStateException("PlayerData no disponible");
+            Method getParty = playerData.getClass().getMethod("getParty");
+            Object party = getParty.invoke(playerData);
+            if (party == null) {
+                msg(player, "party-not-in-party");
+                return false;
+            }
+            Method removeMember;
+            try {
+                removeMember = party.getClass().getMethod("removeMember", playerData.getClass());
+            } catch (NoSuchMethodException ex) {
+                removeMember = null;
+                for (Method method : party.getClass().getMethods()) {
+                    if (method.getName().equals("removeMember") && method.getParameterCount() == 1) {
+                        removeMember = method;
+                        break;
+                    }
+                }
+                if (removeMember == null) throw ex;
+            }
+            removeMember.invoke(party, playerData);
+            setScoreboardPartyPermission(player, false);
+            msg(player, "party-left");
+            return true;
+        } catch (Throwable ex) {
+            getLogger().warning("No se pudo salir de la party MMOCore: "
+                    + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+            msg(player, "party-leave-error");
+            return false;
+        }
+    }
+
     private void inviteFriendToParty(Player player, UUID targetUuid, String fallbackName) {
         if (targetUuid == null) {
             msg(player, "social-target-not-found");
@@ -6835,6 +7155,11 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             case "party-request-denied" -> "&eRechazaste la invitación al grupo de &c{target}&e.";
             case "social-request-expired" -> "&cEsa solicitud ya expiró.";
             case "social-request-error" -> "&cNo se pudo procesar esa solicitud de MMOCore.";
+            case "friend-removed" -> "&eEliminaste a &c{target} &ede tu lista de amigos.";
+            case "friend-remove-error" -> "&cNo se pudo eliminar a &e{target} &cde tus amigos.";
+            case "party-left" -> "&eSaliste de tu Grupo de Aventura.";
+            case "party-not-in-party" -> "&cNo perteneces a ningún Grupo de Aventura.";
+            case "party-leave-error" -> "&cNo se pudo abandonar el Grupo de Aventura.";
             default -> "&cMensaje faltante: " + key;
         };
     }

@@ -1,0 +1,64 @@
+type: "DYNAMIC_TITLES_LIST"
+
+sections:
+  my-titles:
+    title: "&a&lMis Títulos &8({page}/{max_page})"
+    content:
+      - "&7Títulos disponibles: &f{count}"
+      - "&8Toca uno para equiparlo."
+    empty: "&7No tienes títulos disponibles en esta sección."
+    entry:
+      text: "{title_display}\n{status}"
+      image:
+        type: "URL"
+        data: ""
+
+  shop:
+    title: "&6&lTienda de Títulos &8({page}/{max_page})"
+    content:
+      - "&7Títulos disponibles: &f{count}"
+      - "&8Toca uno para comprarlo."
+    empty: "&7No hay títulos disponibles para comprar."
+    entry:
+      text: "{title_display}\n&6{price} monedas"
+      image:
+        type: "URL"
+        data: ""
+
+  locked:
+    title: "&c&lTítulos Bloqueados &8({page}/{max_page})"
+    content:
+      - "&7Títulos bloqueados: &f{count}"
+      - "&8Consulta sus requisitos."
+    empty: "&7No tienes títulos bloqueados."
+    entry:
+      text: "{title_display}\n{requirement}"
+      image:
+        type: "URL"
+        data: ""
+
+buttons:
+  previous:
+    text: "&ePágina anterior"
+    image:
+      type: "URL"
+      data: ""
+  next:
+    text: "&ePágina siguiente"
+    image:
+      type: "URL"
+      data: ""
+  back:
+    text: "&6Volver a Títulos"
+    image:
+      type: "URL"
+      data: ""
+
+# Opcional: sobrescribe texto/imagen para un título concreto sin tocar Java.
+# Usa el ID interno del título de config.yml.
+# titles:
+#   aventurero:
+#     text: "&aAventurero\n{status}"
+#     image:
+#       type: "URL"
+#       data: "https://.../aventurero.png"

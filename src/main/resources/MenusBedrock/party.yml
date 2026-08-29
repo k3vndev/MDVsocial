@@ -34,12 +34,33 @@ buttons:
     image:
       type: "URL"
       data: ""
+  leave:
+    enabled: true
+    text: "&c&lSalir del grupo\n&r&8Abandona tu Grupo de Aventura."
+    image:
+      type: "URL"
+      data: ""
   back:
     text: "&6Volver"
+
 invite-form:
   title: "&d&lInvitar al Grupo"
   input-label: "&eNombre del jugador"
   input-placeholder: "Escribe el nombre..."
+
+leave-confirm:
+  title: "&c&lSalir del Grupo"
+  content: "&7¿Seguro que quieres abandonar tu Grupo de Aventura?"
+  confirm:
+    text: "&c&lSí, salir del grupo"
+    image:
+      type: "URL"
+      data: ""
+  back:
+    text: "&6Volver"
+    image:
+      type: "URL"
+      data: ""
 
 requests-menu:
   title: "&e&lInvitaciones a Grupos"

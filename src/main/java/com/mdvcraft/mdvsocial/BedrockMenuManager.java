@@ -9,6 +9,9 @@ import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,7 +46,10 @@ final class BedrockMenuManager {
             "admin.yml",
             "amigos_lista.yml",
             "party.yml",
-            "homes.yml"
+            "homes.yml",
+            "titulos.yml",
+            "titulos_lista.yml",
+            "rangos.yml"
     );
 
     private final MDVSocialPlugin plugin;
@@ -197,7 +203,7 @@ final class BedrockMenuManager {
         });
         builder.validResultHandler(response -> {
             int index = response.clickedButtonId();
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            plugin.runBedrockUiAction(player, () -> {
                 if (!player.isOnline())
                     return;
                 if (visible.isEmpty()) {
@@ -227,13 +233,45 @@ final class BedrockMenuManager {
         }
         for (String file : DEFAULT_MENU_FILES) {
             File target = new File(folder, file);
-            if (target.exists())
+            if (!target.exists()) {
+                try {
+                    plugin.saveResource("MenusBedrock/" + file, false);
+                } catch (IllegalArgumentException ex) {
+                    plugin.getLogger().warning("No existe el recurso MenusBedrock/" + file + " dentro del jar.");
+                }
                 continue;
-            try {
-                plugin.saveResource("MenusBedrock/" + file, false);
-            } catch (IllegalArgumentException ex) {
-                plugin.getLogger().warning("No existe el recurso MenusBedrock/" + file + " dentro del jar.");
             }
+            mergeMissingMenuDefaults(target, file);
+        }
+    }
+
+    /**
+     * Añade solo claves nuevas a menus Bedrock existentes. Nunca reemplaza textos,
+     * URLs ni valores que el administrador ya personalizó. Esto permite que una
+     * actualización agregue botones nuevos (por ejemplo eliminar amigo/salir party)
+     * sin obligar a reemplazar toda la carpeta MenusBedrock.
+     */
+    private void mergeMissingMenuDefaults(File target, String resourceName) {
+        try (InputStream in = plugin.getResource("MenusBedrock/" + resourceName)) {
+            if (in == null) return;
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(in, StandardCharsets.UTF_8));
+            YamlConfiguration current = YamlConfiguration.loadConfiguration(target);
+            boolean changed = false;
+            for (String path : defaults.getKeys(true)) {
+                if (defaults.isConfigurationSection(path)) continue;
+                if (!current.contains(path)) {
+                    current.set(path, defaults.get(path));
+                    changed = true;
+                }
+            }
+            if (changed) {
+                current.save(target);
+                plugin.getLogger().info("MenusBedrock/" + resourceName + " actualizado con nuevas claves.");
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().warning("No se pudo auto-actualizar MenusBedrock/" + resourceName
+                    + ": " + ex.getMessage());
         }
     }
 
