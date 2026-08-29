@@ -64,6 +64,3 @@ buttons:
   volver:
     text: "&6&lVolver\n&7Regresa al menú anterior."
     action: "BACK"
-  cerrar:
-    text: "&c&lCerrar\n&7Cierra este menú."
-    action: "CLOSE"

@@ -1,0 +1,5 @@
+# MDVSocial 1.6.2 - bloque opcional para documentar el almacenamiento SQLite.
+# No es obligatorio añadirlo: si falta, el jar usa player-data.db por defecto.
+storage:
+  player-data:
+    database-file: 'player-data.db'

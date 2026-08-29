@@ -36,9 +36,6 @@ buttons:
     text: "&ePágina siguiente"
   back:
     text: "&6Volver"
-  close:
-    text: "&cCerrar"
-
 add-form:
   title: "&a&lAñadir amigo"
   input-label: "&eNombre del jugador"
@@ -51,7 +48,6 @@ requests-menu:
   request:
     text: "&e{creator}\n&r&8Toca para responder."
   back: "&6Volver a Amigos"
-  close: "&cCerrar"
   detail:
     title: "&e&lSolicitud de {creator}"
     content: "&7¿Quieres aceptar la solicitud de amistad de &f{creator}&7?"

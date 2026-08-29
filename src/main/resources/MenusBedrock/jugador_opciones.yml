@@ -47,6 +47,3 @@ buttons:
   tpa_offline:
     text: "&8&lViaje no disponible\n&7El jugador no está"
     visible-when: "offline"
-  cerrar:
-    text: "&c&lCerrar\n&7Cierra este menú."
-    action: "CLOSE"

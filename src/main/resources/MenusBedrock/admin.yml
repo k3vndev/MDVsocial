@@ -43,6 +43,3 @@ buttons:
     action: "COMMAND_PLAYER"
     commands:
       - "social"
-  cerrar:
-    text: "&cCerrar\n&7Cierra este menú."
-    action: "CLOSE"

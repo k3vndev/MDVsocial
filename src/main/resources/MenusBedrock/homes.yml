@@ -25,9 +25,6 @@ buttons:
     text: "&8Espacio {home_number} bloqueado\n&r&7Aumenta tu límite de hogares."
   back:
     text: "&6Volver a MDVSocial"
-  close:
-    text: "&cCerrar"
-
 home-actions:
   title: "&6&l{home_name}"
   content:

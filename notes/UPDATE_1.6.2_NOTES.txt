@@ -1,0 +1,32 @@
+MDVSocial 1.6.2
+================
+
+BEDROCK
+- Se eliminaron todos los botones explícitos "Cerrar" de MenusBedrock.
+- Los submenús conservan "Volver". El menú principal se cierra con la X nativa de Bedrock.
+- BedrockMenuManager también filtra action: CLOSE de configuraciones antiguas, por lo que no hace falta limpiar manualmente cada YAML existente.
+- Se eliminaron los botones Cerrar de menús dinámicos: títulos/rangos, buzón/cartas, amigos/solicitudes, party/invitaciones, hogares y biblioteca MMOItems.
+- Java no cambia: sus botones de cierre siguen funcionando como antes.
+
+PLAYER DATA SQLITE
+- player-data.yml deja de ser el almacenamiento activo.
+- Nuevo archivo: plugins/MDVSocial/player-data.db
+- Al iniciar, si existe player-data.yml, se migran automáticamente:
+  * UUID
+  * último nombre conocido
+  * título activo
+  * títulos desbloqueados
+  * castigo activo
+  * título de castigo
+  * título previo al castigo
+- La migración usa una transacción SQLite. Si falla, el YAML original no se retira.
+- Tras migrar correctamente, el YAML antiguo se mueve a plugins/MDVSocial/migration-backups/ como respaldo .legacy.bak.
+- SQLite usa WAL, synchronous=NORMAL y busy_timeout=5000.
+- sqlite-jdbc se empaqueta dentro del jar mediante Maven Shade.
+
+ACTUALIZACIÓN
+1. Apagar el servidor.
+2. Reemplazar el jar por MDVSocial 1.6.2.
+3. Iniciar el servidor.
+4. Revisar consola: debe indicar la migración a player-data.db si existía player-data.yml.
+5. No borrar manualmente player-data.yml antes del primer arranque de 1.6.2.

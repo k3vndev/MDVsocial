@@ -291,6 +291,10 @@ final class BedrockMenuManager {
             }
 
             String action = plugin.normalizeBedrockAction(sec.getString("action", sec.getString("left-action", "")));
+            // Desde 1.6.2 Bedrock no muestra botones explícitos de CERRAR.
+            // Esto también filtra configs antiguas sin obligar al usuario a editarlas.
+            if ("CLOSE".equals(action))
+                continue;
             String targetMenu = normalize(sec.getString("target-menu", sec.getString("menu", "")));
             List<String> commands = new ArrayList<>(sec.getStringList("commands"));
             String single = sec.getString("command", "");

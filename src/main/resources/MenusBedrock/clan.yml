@@ -13,6 +13,3 @@ buttons:
   volver:
     text: "&eVolver"
     action: "BACK"
-  cerrar:
-    text: "&cCerrar"
-    action: "CLOSE"

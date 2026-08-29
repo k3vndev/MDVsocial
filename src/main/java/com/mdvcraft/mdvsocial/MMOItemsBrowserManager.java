@@ -168,8 +168,6 @@ public final class MMOItemsBrowserManager implements Listener {
         }
         builder.button(color("&6Volver a administración"));
         actions.add(() -> plugin.openAdminMenu(player));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
@@ -212,8 +210,6 @@ public final class MMOItemsBrowserManager implements Listener {
         }
         builder.button(color("&6Volver a categorías"));
         actions.add(() -> openBedrockTypes(player, 0));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
@@ -252,8 +248,6 @@ public final class MMOItemsBrowserManager implements Listener {
         }
         builder.button(color("&6Volver a objetos"));
         actions.add(() -> openBedrockItems(player, type, returnPage));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();

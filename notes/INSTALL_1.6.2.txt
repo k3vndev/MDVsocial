@@ -1,0 +1,26 @@
+INSTALACION / ACTUALIZACION MDVSocial 1.6.2
+===========================================
+
+ACTUALIZANDO DESDE 1.6.1
+1. Apaga el servidor por completo.
+2. Haz backup de plugins/MDVSocial/.
+3. Reemplaza solamente el jar por MDVSocial-1.6.2.jar.
+4. NO borres player-data.yml antes del primer arranque.
+5. Inicia el servidor.
+
+MIGRACION AUTOMATICA
+- MDVSocial crea plugins/MDVSocial/player-data.db.
+- Si encuentra player-data.yml, importa automáticamente sus datos en una transacción SQLite.
+- Si la importación termina correctamente, retira player-data.yml de la carpeta principal y lo guarda como:
+  plugins/MDVSocial/migration-backups/player-data-...legacy.bak
+- Si la migración falla, el YAML original queda intacto y se registra el error.
+
+MENUS BEDROCK
+- 1.6.2 ya no muestra botones explícitos "Cerrar".
+- Incluso si tus YAML actuales todavía contienen action: CLOSE, el jar los filtra al cargar Bedrock.
+- Por eso NO necesitas reemplazar tus MenusBedrock personalizados ni perder tus URLs/iconos.
+- Los botones "Volver" se conservan.
+- La X nativa del Form de Bedrock sigue disponible porque pertenece al cliente.
+
+JAVA
+- No se modifica el comportamiento de los menús Java ni sus botones de cierre.

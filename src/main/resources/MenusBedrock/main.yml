@@ -61,6 +61,3 @@ buttons:
     text: "&d&lAyuda\n&7Consulta comandos útiles"
     action: "OPEN_MENU"
     target-menu: "ayuda"
-  cerrar:
-    text: "&c&lCerrar\n&7Cierra este menú."
-    action: "CLOSE"

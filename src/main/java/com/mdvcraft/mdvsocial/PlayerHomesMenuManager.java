@@ -311,10 +311,6 @@ public final class PlayerHomesMenuManager implements Listener, CommandExecutor, 
                 bedrockHomeText(ui, "buttons.back.text", "&6Volver a MDVSocial",
                         player, null, 0, displayed, maxHomes));
         actions.add(() -> Bukkit.dispatchCommand(player, "social"));
-        addBedrockHomeButton(builder, ui, "buttons.close",
-                bedrockHomeText(ui, "buttons.close.text", "&cCerrar",
-                        player, null, 0, displayed, maxHomes));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(plugin, () -> {
             int index = response.clickedButtonId();

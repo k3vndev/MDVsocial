@@ -36,9 +36,6 @@ buttons:
       data: ""
   back:
     text: "&6Volver"
-  close:
-    text: "&cCerrar"
-
 invite-form:
   title: "&d&lInvitar al Grupo"
   input-label: "&eNombre del jugador"
@@ -54,7 +51,6 @@ requests-menu:
       type: "URL"
       data: ""
   back: "&6Volver al Grupo"
-  close: "&cCerrar"
   detail:
     title: "&d&lInvitación de {creator}"
     content: "&7¿Quieres unirte al Grupo de Aventura de &f{creator}&7?"

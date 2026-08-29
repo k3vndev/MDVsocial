@@ -98,7 +98,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     private volatile List<String> interactiveHoverTemplate = List.of();
 
     private File dataFile;
-    private YamlConfiguration data;
+    private PlayerDataStore data;
     private File mailFile;
     private YamlConfiguration mailData;
     private Economy economy;
@@ -196,7 +196,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         mmoItemsBrowserManager.enable();
         startInteractiveChatProfileTask();
 
-        getLogger().info("MDVSocial 1.6.1 habilitado. Compatibilidad Bedrock/Floodgate activa.");
+        getLogger().info("MDVSocial 1.6.2 habilitado. Bedrock sin botones Cerrar + player-data SQLite.");
     }
 
     @Override
@@ -222,6 +222,13 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         scoreboardPartyAttachments.clear();
         saveData();
         saveMailData();
+        if (data != null) {
+            try {
+                data.close();
+            } catch (Exception e) {
+                getLogger().warning("No se pudo cerrar player-data.db limpiamente: " + e.getMessage());
+            }
+        }
     }
 
     private void loadAll() {
@@ -242,28 +249,31 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     }
 
     private void loadData() {
-        if (!getDataFolder().exists()) {
-            getDataFolder().mkdirs();
+        if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
+            getLogger().severe("No se pudo crear la carpeta de MDVSocial.");
+            return;
         }
-        dataFile = new File(getDataFolder(), "player-data.yml");
-        if (!dataFile.exists()) {
-            try {
-                dataFile.createNewFile();
-            } catch (IOException e) {
-                getLogger().severe("No se pudo crear player-data.yml: " + e.getMessage());
-            }
+
+        File legacyYaml = new File(getDataFolder(), "player-data.yml");
+        String databaseName = getConfig().getString("storage.player-data.database-file", "player-data.db");
+        if (databaseName == null || databaseName.isBlank())
+            databaseName = "player-data.db";
+        dataFile = new File(getDataFolder(), databaseName);
+
+        try {
+            if (data != null)
+                data.close();
+            data = new PlayerDataStore(this, dataFile);
+            data.open(legacyYaml);
+        } catch (Exception e) {
+            getLogger().severe("No se pudo abrir/migrar " + dataFile.getName() + ": " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
         }
-        data = YamlConfiguration.loadConfiguration(dataFile);
     }
 
     private void saveData() {
-        if (data == null || dataFile == null)
-            return;
-        try {
-            data.save(dataFile);
-        } catch (IOException e) {
-            getLogger().severe("No se pudo guardar player-data.yml: " + e.getMessage());
-        }
+        if (data != null)
+            data.flush();
     }
 
     private void loadMailData() {
@@ -3790,8 +3800,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 .button(bedrockConfiguredButtonText("titles-menu.locked", "&cTítulos bloqueados"))
                 .button(bedrockConfiguredButtonText("titles-menu.ranks", "&bRangos"))
                 .button(bedrockConfiguredButtonText("items.clear-title", "&eQuitar título"))
-                .button(bedrockConfiguredButtonText("items.back", "&6Volver"))
-                .button(bedrockConfiguredButtonText("items.close", "&cCerrar"));
+                .button(bedrockConfiguredButtonText("items.back", "&6Volver"));
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             switch (response.clickedButtonId()) {
@@ -3871,8 +3880,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
         builder.button(color("&6Volver a Títulos"));
         actions.add(() -> openBedrockTitlesHome(player));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -3911,8 +3918,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
         builder.button(color("&6Volver a Títulos"));
         actions.add(() -> openBedrockTitlesHome(player));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -3966,8 +3971,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
         builder.button(color("&6Volver a Correo"));
         actions.add(() -> openCustomMenu(player, "correo", 1, "menuamigos", 1));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -4024,8 +4027,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         }
         builder.button(color("&6Volver al buzón"));
         actions.add(() -> openBedrockMailbox(player, page));
-        builder.button(color("&cCerrar"));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -4274,9 +4275,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "buttons.back",
                 bedrockUiText(ui, "buttons.back.text", "&6Volver", player, tokens));
         actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
-        addBedrockDynamicButton(builder, ui, "buttons.close",
-                bedrockUiText(ui, "buttons.close.text", "&cCerrar", player, tokens));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -4330,9 +4328,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "requests-menu.back",
                 bedrockUiText(ui, "requests-menu.back", "&6Volver a Amigos", player, tokens));
         actions.add(() -> openBedrockFriends(player, returnPage));
-        addBedrockDynamicButton(builder, ui, "requests-menu.close",
-                bedrockUiText(ui, "requests-menu.close", "&cCerrar", player, tokens));
-        actions.add(() -> { });
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
@@ -4529,9 +4524,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "buttons.back",
                 bedrockUiText(ui, "buttons.back.text", "&6Volver", player, tokens));
         actions.add(() -> openCustomMenu(player, "menuamigos", 1, "main", 1));
-        addBedrockDynamicButton(builder, ui, "buttons.close",
-                bedrockUiText(ui, "buttons.close.text", "&cCerrar", player, tokens));
-        actions.add(() -> { });
 
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
@@ -4584,9 +4576,6 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         addBedrockDynamicButton(builder, ui, "requests-menu.back",
                 bedrockUiText(ui, "requests-menu.back", "&6Volver al Grupo", player, tokens));
         actions.add(() -> openBedrockParty(player));
-        addBedrockDynamicButton(builder, ui, "requests-menu.close",
-                bedrockUiText(ui, "requests-menu.close", "&cCerrar", player, tokens));
-        actions.add(() -> { });
         builder.validResultHandler(response -> Bukkit.getScheduler().runTask(this, () -> {
             int index = response.clickedButtonId();
             if (index >= 0 && index < actions.size()) actions.get(index).run();
