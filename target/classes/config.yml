@@ -1760,3 +1760,22 @@ shop:
   missing-url: "&cLa tienda online no esta configurada."
   player-only: "&cEste comando solo puede ejecutarlo un jugador."
   url: "https://mdvcraft.tebex.io/"
+
+# ----------------------------------------------------------
+# Discord de la comunidad
+# ----------------------------------------------------------
+discord:
+  java:
+    message: |
+      &6&lDiscord
+      &fUnete a nuestra comunidad:
+      {discord}
+    link-text: "&b&n[Unirse a Discord]"
+  bedrock:
+    # Formulario Bedrock que se abre con /discord.
+    menu: discord
+    # Fallback si Floodgate o el formulario no pueden abrirse.
+    fallback-message: "&6&lDiscord\\n&fUnete a nuestra comunidad: &b{discord}"
+  missing-url: "&cEl Discord no esta configurado."
+  player-only: "&cEste comando solo puede ejecutarlo un jugador."
+  url: ""

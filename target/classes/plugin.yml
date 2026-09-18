@@ -28,6 +28,9 @@ commands:
     description: Abre la tienda online de MDVCRAFT.
     usage: /tienda
     aliases: [shop, store]
+  discord:
+    description: Muestra el enlace del Discord de MDVCRAFT.
+    usage: /discord
   casa:
     description: Abre el menu de casas personales.
     usage: /casa

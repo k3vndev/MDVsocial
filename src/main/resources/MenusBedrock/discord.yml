@@ -1,0 +1,12 @@
+type: "SIMPLE"
+title: "&6&lDiscord"
+content:
+  - "&fUnete a nuestra comunidad:"
+  - "&b{discord}"
+  - "&7Pulsa el botón para mostrar el enlace en el chat."
+
+buttons:
+  abrir:
+    text: "&b&lMostrar enlace"
+    action: "OPEN_DISCORD"
+    sound: "open"

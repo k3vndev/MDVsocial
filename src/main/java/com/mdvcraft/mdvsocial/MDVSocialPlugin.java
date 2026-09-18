@@ -170,6 +170,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         getCommand("carta").setExecutor(this);
         getCommand("carta").setTabCompleter(this);
         getCommand("tienda").setExecutor(this);
+        getCommand("discord").setExecutor(this);
         getCommand("mdvsocial").setExecutor(this);
         getCommand("mdvsocial").setTabCompleter(this);
         getCommand("mdvadmin").setExecutor(this);
@@ -434,6 +435,15 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return true;
         }
 
+        if (cmd.equals("discord")) {
+            if (!(sender instanceof Player player)) {
+                playerOnlyDiscordMessage(sender);
+                return true;
+            }
+            openDiscord(player);
+            return true;
+        }
+
         if (cmd.equals("mdvadmin")) {
             if (!(sender instanceof Player player)) {
                 msg(sender, "only-players");
@@ -509,6 +519,40 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         String template = getConfig().getString("shop.bedrock.fallback-message",
                 "&6&lTienda online\\n&fVisita: &b{shop}");
         player.sendMessage(legacyAmpersand.deserialize(template.replace("{shop}", url)));
+    }
+
+    private void playerOnlyDiscordMessage(CommandSender sender) {
+        sender.sendMessage(color(getConfig().getString("discord.player-only",
+                "&cEste comando solo puede ejecutarlo un jugador.")));
+    }
+
+    private void openDiscord(Player player) {
+        String url = getConfig().getString("discord.url", "");
+        if (url == null || url.isBlank()) {
+            player.sendMessage(color(getConfig().getString("discord.missing-url",
+                    "&cEl Discord no esta configurado.")));
+            return;
+        }
+
+        if (isBedrockPlayer(player)) {
+            String menu = getConfig().getString("discord.bedrock.menu", "discord");
+            if (bedrockMenuManager != null && bedrockMenuManager.open(player, menu, 1, "", 1,
+                    null, "", false))
+                return;
+            sendBedrockDiscordFallback(player, url);
+            return;
+        }
+
+        String template = getConfig().getString("discord.java.message",
+                "&6&lDiscord\\n&fUnete a nuestra comunidad:\\n{discord}");
+        String linkText = getConfig().getString("discord.java.link-text", "&b&n[Unirse a Discord]");
+        player.sendMessage(buildShopMessage(template.replace("{discord}", "{shop}"), linkText, url));
+    }
+
+    private void sendBedrockDiscordFallback(Player player, String url) {
+        String template = getConfig().getString("discord.bedrock.fallback-message",
+                "&6&lDiscord\\n&fUnete a nuestra comunidad: &b{discord}");
+        player.sendMessage(legacyAmpersand.deserialize(template.replace("{discord}", url)));
     }
 
     void openAdminMenu(Player player) {
@@ -1928,6 +1972,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             case "OPEN_TITLE", "OPEN_TITLES", "TITLES" -> "OPEN_TITLES";
             case "OPEN_MMOITEMS_BROWSER", "MMOITEMS_BROWSER", "OPEN_ITEM_BROWSER", "ITEM_BROWSER" ->
                 "OPEN_MMOITEMS_BROWSER";
+            case "OPEN_STORE", "STORE_LINK", "OPEN_ONLINE_STORE", "TIENDA", "SHOP_LINK" -> "OPEN_STORE";
+            case "OPEN_DISCORD", "DISCORD_LINK", "DISCORD", "ABRIR_DISCORD" -> "OPEN_DISCORD";
             case "OPEN_MAIL", "OPEN_MAILBOX", "MAILBOX", "BUZON" -> "OPEN_MAILBOX";
             case "START_MAIL", "START_MAIL_SEND", "SEND_MAIL", "ENVIAR_CARTA" -> "START_MAIL_SEND";
             case "START_MAIL_TARGET", "START_MAIL_SEND_TARGET", "SEND_MAIL_TARGET", "ENVIAR_CARTA_TARGET",
@@ -1981,7 +2027,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return "";
         String rendered = applyTargetPlaceholders(raw, player, targetUuid, targetName, targetOnline);
         String shopUrl = getConfig().getString("shop.url", "");
-        return color(rendered.replace("{shop}", shopUrl).replace("{store_url}", shopUrl));
+        String discordUrl = getConfig().getString("discord.url", "");
+        return color(rendered.replace("{shop}", shopUrl).replace("{store_url}", shopUrl)
+                .replace("{discord}", discordUrl).replace("{discord_url}", discordUrl));
     }
 
     void openBedrockBack(Player player, BedrockMenuContext context) {
@@ -2044,6 +2092,10 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
                 else
                     mmoItemsBrowserManager.open(player);
             }
+            case "OPEN_STORE", "STORE_LINK", "OPEN_ONLINE_STORE" -> sendBedrockShopFallback(player,
+                    getConfig().getString("shop.url", ""));
+            case "OPEN_DISCORD", "DISCORD_LINK" -> sendBedrockDiscordFallback(player,
+                    getConfig().getString("discord.url", ""));
             case "START_MAIL_SEND" -> startMailRecipientPrompt(player,
                     context.menuId.isBlank() ? "correo" : context.menuId, context.page);
             case "START_MAIL_SEND_TARGET" -> startMailMessagePromptToTarget(player, context.targetUuid,
