@@ -169,6 +169,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         getCommand("correo").setTabCompleter(this);
         getCommand("carta").setExecutor(this);
         getCommand("carta").setTabCompleter(this);
+        getCommand("tienda").setExecutor(this);
         getCommand("mdvsocial").setExecutor(this);
         getCommand("mdvsocial").setTabCompleter(this);
         getCommand("mdvadmin").setExecutor(this);
@@ -424,6 +425,15 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return true;
         }
 
+        if (cmd.equals("tienda")) {
+            if (!(sender instanceof Player player)) {
+                playerOnlyShopMessage(sender);
+                return true;
+            }
+            openOnlineShop(player);
+            return true;
+        }
+
         if (cmd.equals("mdvadmin")) {
             if (!(sender instanceof Player player)) {
                 msg(sender, "only-players");
@@ -450,6 +460,55 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             return handleAdminCommand(sender, args);
         }
         return false;
+    }
+
+    private void playerOnlyShopMessage(CommandSender sender) {
+        sender.sendMessage(color(getConfig().getString("shop.player-only",
+                "&cEste comando solo puede ejecutarlo un jugador.")));
+    }
+
+    private void openOnlineShop(Player player) {
+        String url = getConfig().getString("shop.url", "");
+        if (url == null || url.isBlank()) {
+            player.sendMessage(color(getConfig().getString("shop.missing-url",
+                    "&cLa tienda online no esta configurada.")));
+            return;
+        }
+
+        if (isBedrockPlayer(player)) {
+            String menu = getConfig().getString("shop.bedrock.menu", "tienda");
+            if (bedrockMenuManager != null && bedrockMenuManager.open(player, menu, 1, "", 1,
+                    null, "", false))
+                return;
+            sendBedrockShopFallback(player, url);
+            return;
+        }
+
+        String template = getConfig().getString("shop.java.message", "&6&lTienda online\\n&f{shop}");
+        String linkText = getConfig().getString("shop.java.link-text", "&b&n[Abrir tienda]");
+        player.sendMessage(buildShopMessage(template, linkText, url));
+    }
+
+    private Component buildShopMessage(String template, String linkText, String url) {
+        String[] parts = template.split("\\{shop}", -1);
+        Component result = Component.empty();
+        Component link = legacyAmpersand.deserialize(linkText)
+                .clickEvent(ClickEvent.openUrl(url))
+                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&7Abrir tienda online")));
+        for (int i = 0; i < parts.length; i++) {
+            result = result.append(legacyAmpersand.deserialize(parts[i]));
+            if (i < parts.length - 1)
+                result = result.append(link);
+        }
+        if (parts.length == 1)
+            result = result.append(legacyAmpersand.deserialize("\\n")).append(link);
+        return result;
+    }
+
+    private void sendBedrockShopFallback(Player player, String url) {
+        String template = getConfig().getString("shop.bedrock.fallback-message",
+                "&6&lTienda online\\n&fVisita: &b{shop}");
+        player.sendMessage(legacyAmpersand.deserialize(template.replace("{shop}", url)));
     }
 
     void openAdminMenu(Player player) {
@@ -1893,7 +1952,8 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
             case "OPEN_FRIENDS_BEDROCK", "BEDROCK_FRIENDS", "OPEN_BEDROCK_FRIENDS" -> "OPEN_BEDROCK_FRIENDS";
             case "OPEN_PARTY_BEDROCK", "BEDROCK_PARTY", "OPEN_BEDROCK_PARTY" -> "OPEN_BEDROCK_PARTY";
             case "OPEN_MMOCORE_PROFILE", "MMOCORE_PROFILE", "OPEN_BEDROCK_MMOCORE_PROFILE" -> "OPEN_MMOCORE_PROFILE";
-            case "OPEN_MMOCORE_ATTRIBUTES", "MMOCORE_ATTRIBUTES", "OPEN_BEDROCK_MMOCORE_ATTRIBUTES" -> "OPEN_MMOCORE_ATTRIBUTES";
+            case "OPEN_MMOCORE_ATTRIBUTES", "MMOCORE_ATTRIBUTES", "OPEN_BEDROCK_MMOCORE_ATTRIBUTES" ->
+                "OPEN_MMOCORE_ATTRIBUTES";
             case "OPEN_MMOCORE_CLASSES", "MMOCORE_CLASSES", "OPEN_BEDROCK_MMOCORE_CLASSES" -> "OPEN_MMOCORE_CLASSES";
             case "NONE", "INFO", "NO_ACTION" -> "NONE";
             default -> normalized;
@@ -1919,7 +1979,9 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
     String bedrockText(String raw, Player player, UUID targetUuid, String targetName, boolean targetOnline) {
         if (raw == null)
             return "";
-        return color(applyTargetPlaceholders(raw, player, targetUuid, targetName, targetOnline));
+        String rendered = applyTargetPlaceholders(raw, player, targetUuid, targetName, targetOnline);
+        String shopUrl = getConfig().getString("shop.url", "");
+        return color(rendered.replace("{shop}", shopUrl).replace("{store_url}", shopUrl));
     }
 
     void openBedrockBack(Player player, BedrockMenuContext context) {

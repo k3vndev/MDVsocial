@@ -1,0 +1,12 @@
+type: "SIMPLE"
+title: "&6&lTienda online"
+content:
+  - "&fVisita nuestra tienda:"
+  - "&b{shop}"
+  - "&7Pulsa el botón para mostrar el enlace en el chat."
+
+buttons:
+  abrir:
+    text: "&b&lMostrar enlace"
+    action: "OPEN_STORE"
+    sound: "open"

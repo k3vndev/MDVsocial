@@ -24,6 +24,10 @@ commands:
     description: Envia y administra cartas de MDVSocial.
     usage: /carta
     aliases: [cartas]
+  tienda:
+    description: Abre la tienda online de MDVCRAFT.
+    usage: /tienda
+    aliases: [shop, store]
   casa:
     description: Abre el menu de casas personales.
     usage: /casa

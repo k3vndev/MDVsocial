@@ -1741,5 +1741,22 @@ ranks:
       - '&7Estado: {status}'
       
  
- 
- #aaaaa1
+# ----------------------------------------------------------
+# Tienda online
+# ----------------------------------------------------------
+shop:
+  java:
+    message: |
+      &6&lTienda online
+      &fVisita nuestra tienda:
+      {shop}
+    link-text: "&b&n[Abrir tienda]"
+  bedrock:
+    # Formulario Bedrock que se abre con /tienda.
+    menu: tienda
+    # Fallback si Floodgate o el formulario no pueden abrirse.
+    fallback-message: "&6&lTienda online\\n&fVisita nuestra tienda: &b{shop}"
+    
+  missing-url: "&cLa tienda online no esta configurada."
+  player-only: "&cEste comando solo puede ejecutarlo un jugador."
+  url: "https://mdvcraft.tebex.io/"
