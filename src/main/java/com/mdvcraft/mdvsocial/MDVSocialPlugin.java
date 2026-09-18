@@ -504,7 +504,7 @@ public final class MDVSocialPlugin extends JavaPlugin implements Listener, Comma
         Component result = Component.empty();
         Component link = legacyAmpersand.deserialize(linkText)
                 .clickEvent(ClickEvent.openUrl(url))
-                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&7Abrir tienda online")));
+                .hoverEvent(HoverEvent.showText(legacyAmpersand.deserialize("&7Abrir enlace")));
         for (int i = 0; i < parts.length; i++) {
             result = result.append(legacyAmpersand.deserialize(parts[i]));
             if (i < parts.length - 1)

@@ -1,12 +1,12 @@
 type: "SIMPLE"
-title: "&6&lTienda online"
+title: "&2&lTienda online"
 content:
   - "&fVisita nuestra tienda:"
   - "&b{shop}"
-  - "&7Pulsa el botón para mostrar el enlace en el chat."
+  - "&7Escribe el enlace en tu navegador."
 
 buttons:
   abrir:
-    text: "&b&lMostrar enlace"
+    text: "&2&lOkay"
     action: "OPEN_STORE"
     sound: "open"
